@@ -119,7 +119,7 @@ void fill_with_noise(int width, int height, int* graph, int max, size_t seed, fl
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             float noise = noise_2d(&perm_table[0], x, y, scale);
-            int scaled = (int)fmaxf((noise + 1.0f) / 2.0f * ((float)max + 0.999f), 0.0f);
+            int scaled = (int)fmaxf((noise + 1.0f) / 2.0f * ((float)max + 0.999f), 1.0f);
             graph[x * height + y] = scaled;
         }
     }
