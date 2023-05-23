@@ -22,8 +22,8 @@ int main() {
     scanf("%zu", &seed);
     printf("Enter scale: ");
     scanf("%f", &scale);*/
-    width = 4;
-    height = 4;
+    width = 10;
+    height = 10;
     max_value = 5;
     seed = 3;
     scale = 1.0f;
@@ -76,6 +76,7 @@ int main() {
     }
 
     free(tempGrid);
+    free_path(&path);
 
     fclose(fp);
     free(graph);

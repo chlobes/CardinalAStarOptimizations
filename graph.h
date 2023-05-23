@@ -10,3 +10,17 @@ int* init_graph(int width, int height) {
     }
     return graph;
 }
+
+typedef struct coord {
+    int x, y;
+} Coord;
+
+typedef struct path {
+    Coord* steps;
+    int num_steps;
+    int cost;
+} Path;
+
+void free_path(Path* path) {
+    free(path->steps);
+}

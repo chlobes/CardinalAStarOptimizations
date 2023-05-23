@@ -1,17 +1,8 @@
 #include <stdio.h>
 #include "heap.h"
+#include "graph.h"
 
-typedef struct coord {
-    int x, y;
-} Coord;
-
-typedef struct path {
-    Coord* steps;
-    int num_steps;
-    int cost;
-} Path;
-
-Path backtrace_path(unsigned char* closedList, int width, int height, int num_steps, int cost, Coord end) {
+Path backtrace_path(unsigned char* closed_set, int width, int height, int num_steps, int cost, Coord end) {
     Path path;
     path.steps = (Coord*)malloc(num_steps * sizeof(Coord));
     path.num_steps = num_steps;
@@ -21,7 +12,7 @@ Path backtrace_path(unsigned char* closedList, int width, int height, int num_st
     for (int step = num_steps - 1; step >= 0; step--) {
         path.steps[step] = current;
 
-        int direction = closedList[current.y * width + current.x];
+        unsigned char direction = closed_set[current.y * width + current.x];
         current.x -= ((int)(direction >> 4)) - 1;
         current.y -= ((int)(direction & 0xF)) - 2;
     }
@@ -34,16 +25,16 @@ Path backtrace_path(unsigned char* closedList, int width, int height, int num_st
 //this function constructs a path from any node in the left to any node on the right, diagonals are permitted
 //note, the heuristic assumes there are no 0 nodes
 Path astar(int* grid, int width, int height) {
-    Heap openList = create_heap(width * 4);
+    Heap open_set = create_heap((width * height + 7) / 8);
 
-    unsigned char* closedList = malloc(width * height * sizeof(unsigned char)); //packed direction of the previous node
+    unsigned char* closed_set = malloc(width * height * sizeof(unsigned char)); //packed direction of the previous node
     for (int i = 0; i < width * height; i++) {
-        closedList[i] = 0;
+        closed_set[i] = 0;
     }
 
-    // Add the starting nodes to the open list
+    // Add the starting nodes to the open set
     for (int y = 0; y < height; y++) {
-        closedList[width * y + 0] = 1; //fill the closed list so we don't try to path to these nodes
+        closed_set[width * y + 0] = 1; //fill the closed set so we don't try to path to these nodes
         Node node;
         node.x = 0;
         node.y = y;
@@ -51,18 +42,17 @@ Path astar(int* grid, int width, int height) {
         node.h = width;
         node.f = width + grid[y * width + 0];
         node.steps = 1;
-        heap_push(&openList, node);
+        heap_push(&open_set, node);
     }
 
-    while (openList.size > 0) {
-        Node current = heap_pop(&openList);
-        printf("checking node at (%d, %d)\n",current.x,current.y);
+    while (open_set.size > 0) {
+        Node current = heap_pop(&open_set);
 
         if (current.x == width - 1) { //path found
             Coord end = { current.x, current.y };
-            Path result = backtrace_path(closedList, width, height, current.steps, current.g, end);
-            free_heap(&openList);
-            free(closedList);
+            Path result = backtrace_path(closed_set, width, height, current.steps, current.g, end);
+            free_heap(&open_set);
+            free(closed_set);
             return result;
         }
 
@@ -76,7 +66,7 @@ Path astar(int* grid, int width, int height) {
                     continue;
                 }
 
-                if (closedList[node.y * width + node.x] > 0) { //skip nodes we already have a path to, this is ok since our h is admissible
+                if (closed_set[node.y * width + node.x] > 0) { //skip nodes we already have a path to, this is ok since our h is admissible
                     continue;
                 }
 
@@ -85,8 +75,8 @@ Path astar(int* grid, int width, int height) {
                 node.f = node.g + node.h;
                 node.steps = current.steps + 1;
 
-                closedList[node.y * width + node.x] = ((dx + 1) << 4) + (dy + 2);
-                heap_push(&openList, node);
+                closed_set[node.y * width + node.x] = ((dx + 1) << 4) + (dy + 2);
+                heap_push(&open_set, node);
             }
         }
     }
