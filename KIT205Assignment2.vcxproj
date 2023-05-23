@@ -130,7 +130,9 @@
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="astar.h" />
     <ClInclude Include="graph.h" />
+    <ClInclude Include="heap.h" />
     <ClInclude Include="noise.h" />
   </ItemGroup>
   <ItemGroup>

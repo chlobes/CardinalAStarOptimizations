@@ -26,6 +26,12 @@
     <ClInclude Include="noise.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="astar.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="heap.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="input.txt">

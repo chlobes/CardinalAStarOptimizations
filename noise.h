@@ -95,7 +95,7 @@ float noise_2d(int* perm_table, int x, int y, float scale) {
 
 //fill the graph with noise between 0 and max
 void fill_with_noise(int width, int height, int* graph, int max, size_t seed, float scale) {
-    seed += (SIZE_MAX / 7 * 4); //small seeds cause the first few values to be wierd so we avoid them
+    seed += (SIZE_MAX / 7U * 4U); //small seeds cause the first few values to be wierd so we avoid them
     size_t xor_state[5] = { seed, seed % 865941, seed % 45129, seed % 963, seed % 7437 };
     int perm_table[512] = { 0 };
 
