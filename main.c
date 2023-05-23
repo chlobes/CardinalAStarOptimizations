@@ -39,7 +39,7 @@ int main() {
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            fprintf(fp, "%d ", graph[x * height + y]);
+            fprintf(fp, "%d ", graph[y * width + x]);
         }
         fprintf(fp, "\n");
     }
