@@ -107,8 +107,8 @@ int main() {
         printf("enter noise scale: ");
         scanf("%f", &noise_scale);
     } else {
-        width = 10;
-        height = 10;
+        width = 1000;
+        height = 1000;
         seed = 3;
         noise_thresh = -0.25f;
         noise_scale = 1.0f;
