@@ -11,6 +11,7 @@
 #include "noise.h"
 #include "astar.h"
 #include "graph_connect.h"
+#include "rng.h"
 //#include "mincut.h"
 
 //generates a graph of walls and empty nodes, the empty nodes are always connected, and the top left and bottom right right corners are always empty
