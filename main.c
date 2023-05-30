@@ -69,13 +69,13 @@ void profile_pathfinder(FILE* debug, FILE* output, PathfinderFunction f, Graph g
         // Replace path nodes in the temporary grid with a special marker -1
         for (int i = 0; i < path.num_steps; i++) {
             Coord c = path.steps[i];
-            tempGrid[c.y * width + c.x] = -1;
+            tempGrid[c.y * width + c.x] = 255;
         }
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 // If the node is on the path, print an "X", otherwise print the node cost.
-                if (tempGrid[y * width + x] == -1) {
+                if (tempGrid[y * width + x] == 255) {
                     fprintf(debug, "X ");
                 }
                 else {
