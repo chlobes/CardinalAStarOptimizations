@@ -34,9 +34,11 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
 
     closed_set[start.x + width * start.y] = 1;
     Node node = (Node) { start.x, start.y, 1, 0, 1 };
+    heap_push(&open_set, node);
 
     while (open_set.size > 0) {
         Node current = heap_pop(&open_set);
+        printf("searching node (%d, %d)\n", current.x, current.y);
 
         if (current.x == end.x && current.y == end.y) { //found the destination
             Path result = backtrace_path(closed_set, width, height, current.g, end);

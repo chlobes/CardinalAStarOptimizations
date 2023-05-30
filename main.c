@@ -71,7 +71,6 @@ int main() {
         }
         fprintf(fp, "\n");
     }
-    return;
 
     fprintf(fp, "\n");
 
