@@ -8,7 +8,7 @@ typedef struct node {
     int g;
     int h;
     int f;
-    int steps;
+    //int steps;
 } Node;
 
 typedef struct {

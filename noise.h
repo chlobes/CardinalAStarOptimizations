@@ -3,6 +3,8 @@
 #include <math.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "graph.h"
+#include "rng.h"
 
 //translating a noise generator I wrote in rust for a hobby project, with some assistance from chatgpt
 //TODO: should probably put this into a C file
@@ -26,20 +28,6 @@ static const int PERMUTATION_TABLE[256] = {
     243, 141, 128, 195, 78, 66, 215, 61, 156, 180
 };
 
-//we use an xorshift generator to shuffle the array for perlin noise
-int gen_random(size_t* state) {
-    size_t t = state[3];
-    t ^= t >> 2;
-    t ^= t << 1;
-    state[3] = state[2]; state[2] = state[1]; state[1] = state[0];
-    size_t s = state[0];
-    t ^= s;
-    t ^= s << 4;
-    state[0] = t;
-    state[4] += 362437;
-    return (int)((t + state[4]) % INT_MAX);
-}
-
 float lerp(float t, float a, float b) {
     return a * (1.0f - t) + b * t;
 }
@@ -57,7 +45,7 @@ float grad_2d(int hash, float x, float y) {
     }
 }
 
-float noise_2d(int* perm_table, int x, int y, float scale) {
+float noise_2d(Graph perm_table, int x, int y, float scale) {
     float xf = (float)x + 0.479f;
     float yf = (float)y + 0.479f;
 
@@ -93,10 +81,9 @@ float noise_2d(int* perm_table, int x, int y, float scale) {
     return lerp(v, x1, x2);
 }
 
+
 //fill the graph with noise between 0 and max
-void fill_with_noise(int width, int height, int* graph, int max, size_t seed, float scale) {
-    seed += (SIZE_MAX / 7U * 4U); //small seeds cause the first few values to be wierd so we avoid them
-    size_t xor_state[5] = { seed, seed % 865941, seed % 45129, seed % 963, seed % 7437 };
+void fill_with_noise(Graph graph, int width, int height, float threshold, u64* rng, float scale) {
     int perm_table[512] = { 0 };
 
     for (int i = 0; i < 256; i++) {
@@ -106,7 +93,7 @@ void fill_with_noise(int width, int height, int* graph, int max, size_t seed, fl
     //using the modern Fisher-Yates shuffle
     for (int i = 0; i < 255; i++) { //we go up to the second last index, 254
         int m = 256 - i;
-        int j = (gen_random(&xor_state[0]) % m) + i; //i <= j < 256
+        int j = (gen_random(&rng[0]) % m) + i; //i <= j < 256
         int tmp = perm_table[i];
         perm_table[i] = perm_table[j];
         perm_table[j] = tmp;
@@ -119,8 +106,7 @@ void fill_with_noise(int width, int height, int* graph, int max, size_t seed, fl
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             float noise = noise_2d(&perm_table[0], x, y, scale);
-            int scaled = (int)fmaxf((noise + 1.0f) / 2.0f * ((float)max + 0.999f), 1.0f);
-            graph[y * width + x] = scaled;
+            graph[x + width * y] = noise > threshold ? 1 : 0;
         }
     }
 }

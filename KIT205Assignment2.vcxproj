@@ -132,8 +132,11 @@
   <ItemGroup>
     <ClInclude Include="astar.h" />
     <ClInclude Include="graph.h" />
+    <ClInclude Include="graph_connect.h" />
     <ClInclude Include="heap.h" />
     <ClInclude Include="noise.h" />
+    <ClInclude Include="prune.h" />
+    <ClInclude Include="rng.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="input.txt" />

@@ -1,12 +1,14 @@
-#include <stdio.h>
 #include "heap.h"
 #include "graph.h"
+#include <stdlib.h>
 
-Path backtrace_path(unsigned char* closed_set, int width, int height, int num_steps, int cost, Coord end) {
+#define dist(a, b) (abs((a) - (b)))
+
+Path backtrace_path(unsigned char* closed_set, int width, int height, int num_steps, Coord end) {
     Path path;
     path.steps = (Coord*)malloc(num_steps * sizeof(Coord));
     path.num_steps = num_steps;
-    path.cost = cost;
+    //path.cost = cost;
 
     Coord current = end;
     for (int step = num_steps - 1; step >= 0; step--) {
@@ -22,65 +24,53 @@ Path backtrace_path(unsigned char* closed_set, int width, int height, int num_st
 
 //written with chatgpt's assistance, but it's really not great at something this complex
 
-//this function constructs a path from any node in the left to any node on the right, diagonals are permitted
-//note, the heuristic assumes there are no 0 nodes
-Path astar(int* grid, int width, int height) {
+//regular old A* on a uniform grid, diagonals are not permitted
+//any cell that isn't a zero is treated as a wall
+Path astar(Graph graph, int width, int height, Coord start, Coord end) {
     Heap open_set = create_heap((width * height + 7) / 8);
 
-    unsigned char* closed_set = malloc(width * height * sizeof(unsigned char)); //packed direction of the previous node
-    for (int i = 0; i < width * height; i++) {
-        closed_set[i] = 0;
-    }
+    unsigned char* closed_set = malloc(width * height * sizeof(unsigned char));
+    memset(closed_set, 0, width * height * sizeof(unsigned char));
 
-    // Add the starting nodes to the open set
-    for (int y = 0; y < height; y++) {
-        closed_set[width * y + 0] = 1; //fill the closed set so we don't try to path to these nodes
-        Node node;
-        node.x = 0;
-        node.y = y;
-        node.g = grid[y * width + 0];
-        node.h = width;
-        node.f = width + grid[y * width + 0];
-        node.steps = 1;
-        heap_push(&open_set, node);
-    }
+    closed_set[start.x + width * start.y] = 1;
+    Node node = (Node) { start.x, start.y, 1, 0, 1 };
 
     while (open_set.size > 0) {
         Node current = heap_pop(&open_set);
 
-        if (current.x == width - 1) { //path found
-            Coord end = { current.x, current.y };
-            Path result = backtrace_path(closed_set, width, height, current.steps, current.g, end);
+        if (current.x == end.x && current.y == end.y) { //found the destination
+            Path result = backtrace_path(closed_set, width, height, current.g, end);
             free_heap(&open_set);
             free(closed_set);
             return result;
         }
 
-        for (int dx = -1; dx <= 1; dx++) { //iterate through neighbours
-            for (int dy = -1; dy <= 1; dy++) {
-                Node node;
-                node.x = current.x + dx;
-                node.y = current.y + dy;
+        for (int i = 0; i < 4; i++) {
+            int dir = (i / 2) * -2 + 1;
+            int dx = (i % 2) * dir;
+            int dy = dir - dx;
 
-                if (node.x < 0 || node.x >= width || node.y < 0 || node.y >= height) { //skip nodes outside the map
-                    continue;
-                }
+            Node node;
+            node.x = current.x + dx;
+            node.y = current.y + dy;
 
-                if (closed_set[node.y * width + node.x] > 0) { //skip nodes we already have a path to, this is ok since our h is admissible
-                    continue;
-                }
-
-                node.g = current.g + grid[node.y * width + node.x];
-                node.h = width - node.x;
-                node.f = node.g + node.h;
-                node.steps = current.steps + 1;
-
-                closed_set[node.y * width + node.x] = ((dx + 1) << 4) + (dy + 2);
-                heap_push(&open_set, node);
+            if (node.x < 0 || node.x >= width || node.y < 0 || node.y >= height) { //out of bounds
+                continue;
             }
+
+            if (graph[node.y * width + node.x] || closed_set[node.y * width + node.x]) { //wall or already checked
+                continue;
+            }
+
+            node.g = current.g + 1; //uniform cost of 1
+            node.h = abs(node.x - end.x) + abs(node.y - end.y); //heuristic is manhattan distance, this should be admissible
+            node.f = node.g + node.h;
+
+            closed_set[node.x + width * node.y] = ((dx + 1) << 4) + (dy + 2);
+            heap_push(&open_set, node);
         }
     }
 
-    printf("Error: no path found"); //this should be impossible
+    printf("Error: no path found");
     exit(1);
 }
