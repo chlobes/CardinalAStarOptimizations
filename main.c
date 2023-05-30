@@ -15,6 +15,8 @@
 #include "rng.h"
 //#include "mincut.h"
 
+typedef Path (*PathfinderFunction)(Graph, int, int, Coord, Coord);
+
 //generates a graph of walls and empty nodes, the empty nodes are always connected, and the top left and bottom right right corners are always empty
 Graph generate_graph(FILE* debug, int width, int height, u64 seed, float noise_thresh, float noise_scale) {
     Graph graph = create_graph(width, height);
@@ -39,51 +41,23 @@ Graph generate_graph(FILE* debug, int width, int height, u64 seed, float noise_t
     return graph;
 }
 
-int main() {
-    int width, height;
-    u64 seed;
-    float noise_thresh, noise_scale;
-    FILE* debug;
+//profiling function written by chatgpt
+void profile_pathfinder(FILE* debug, FILE* output, PathfinderFunction f, Graph graph, int width, int height, Coord start, Coord end) {
+    LARGE_INTEGER frequency;
+    LARGE_INTEGER start_time;
+    LARGE_INTEGER end_time;
+    double interval;
 
-    if (USER_INPUT) {
-        printf("enter grid width: ");
-        scanf("%d", &width);
-        printf("enter grid height: ");
-        scanf("%d", &height);
-        printf("enter rng seed: ");
-        scanf("%lu", &seed);
-        printf("enter noise threshold (-1 to 1): ");
-        scanf("%f", &noise_thresh);
-        printf("enter noise scale: ");
-        scanf("%f", &noise_scale);
-    } else {
-        width = 10;
-        height = 10;
-        seed = 3;
-        noise_thresh = -0.25f;
-        noise_scale = 1.0f;
-    }
-    
-    if (DEBUG) {
-        debug = fopen("debug.txt", "w");
-    }
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&start_time); //start the timer
 
-    Graph graph = generate_graph(debug, width, height, seed, noise_thresh, noise_scale);
+    Path path = f(graph, width, height, start, end);
 
-    if (DEBUG) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                fprintf(debug, "%d ", graph[x + width * y]);
-            }
-            fprintf(debug, "\n");
-        }
-        fprintf(debug, "\n");
-    }
+    QueryPerformanceCounter(&end_time); //stop the timer
+    interval = (double)(end_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
 
-    Path path = astar(graph, width, height, (Coord) { 0, 0 }, (Coord) { width - 1, height - 1 });
-
-    printf("total path steps %d\n", path.num_steps);
-    //printf("total path cost %d\n", path.cost);
+    fprintf(output, "time %fs\n", interval);
+    fprintf(output, "path length %d", path.num_steps);
 
     if (DEBUG) {
         // Create a temporary grid for printing.
@@ -111,14 +85,61 @@ int main() {
         fprintf(debug, "\n");
         free(tempGrid);
     }
-
     free_path(&path);
+}
+
+int main() {
+    int width, height;
+    u64 seed;
+    float noise_thresh, noise_scale;
+    FILE* debug;
+    FILE* output;
+
+    if (USER_INPUT) {
+        printf("enter grid width: ");
+        scanf("%d", &width);
+        printf("enter grid height: ");
+        scanf("%d", &height);
+        printf("enter rng seed: ");
+        scanf("%lu", &seed);
+        printf("enter noise threshold (-1 to 1): ");
+        scanf("%f", &noise_thresh);
+        printf("enter noise scale: ");
+        scanf("%f", &noise_scale);
+    } else {
+        width = 10;
+        height = 10;
+        seed = 3;
+        noise_thresh = -0.25f;
+        noise_scale = 1.0f;
+    }
+    
+    if (DEBUG) {
+        debug = fopen("debug.txt", "w");
+    }
+    output = fopen("output.txt", "w");
+
+    Graph graph = generate_graph(debug, width, height, seed, noise_thresh, noise_scale);
+
+    if (DEBUG) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                fprintf(debug, "%d ", graph[x + width * y]);
+            }
+            fprintf(debug, "\n");
+        }
+        fprintf(debug, "\n");
+    }
+
+    fprintf(output, "astar:");
+    profile_pathfinder(debug, output, astar, graph, width, height, (Coord) { 0, 0 }, (Coord) { width - 1, height - 1 });
 
     //TODO: cellular automata comparison
 
     if (DEBUG) {
         fclose(debug);
     }
+    fclose(output);
     free(graph);
     return 0;
 }
