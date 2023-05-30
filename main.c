@@ -2,6 +2,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#define USER_INPUT 0
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -38,16 +40,24 @@ int main() {
     u64 seed;
     float noise_thresh, noise_scale;
 
-    printf("enter grid width: ");
-    scanf("%d", &width);
-    printf("enter grid height: ");
-    scanf("%d", &height);
-    printf("enter rng seed: ");
-    scanf("%lu", &seed);
-    printf("enter noise threshold (-1 to 1): ");
-    scanf("%f", &noise_thresh);
-    printf("enter noise scale: ");
-    scanf("%f", &noise_scale);
+    if (USER_INPUT) {
+        printf("enter grid width: ");
+        scanf("%d", &width);
+        printf("enter grid height: ");
+        scanf("%d", &height);
+        printf("enter rng seed: ");
+        scanf("%lu", &seed);
+        printf("enter noise threshold (-1 to 1): ");
+        scanf("%f", &noise_thresh);
+        printf("enter noise scale: ");
+        scanf("%f", &noise_scale);
+    } else {
+        width = 10;
+        height = 10;
+        seed = 3;
+        noise_thresh = -0.25f;
+        noise_scale = 1.0f;
+    }
     
     FILE* fp = fopen("output.txt", "w");
 
