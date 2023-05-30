@@ -11,10 +11,32 @@
 #include "graph_connect.h"
 //#include "mincut.h"
 
+//generates a graph of walls and empty nodes, the empty nodes are always connected, and the top left and bottom right right corners are always empty
+Graph generate_graph(FILE* fp, int width, int height, u64 seed, float noise_thresh, float noise_scale) {
+    Graph graph = create_graph(width, height);
+    u64* rng = init_rng(seed);
+
+    fill_with_noise(graph, width, height, noise_thresh, rng, noise_scale);
+    graph[0] = 0;
+    graph[width * height - 1] = 0;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            fprintf(fp, "%d ", graph[y * width + x]);
+        }
+        fprintf(fp, "\n");
+    }
+    fprintf(fp, "\n");
+
+    connect_graph(graph, width, height, rng);
+
+    return graph;
+}
+
 int main() {
     int width, height;
-    size_t seed;
-    float threshhold, scale;
+    u64 seed;
+    float noise_thresh, noise_scale;
 
     /*printf("Enter width: ");
     scanf("%d", &width);
@@ -28,46 +50,17 @@ int main() {
     scanf("%f", &scale);*/
     width = 10;
     height = 10;
-    threshhold = -0.3f;
     seed = 4;
-    scale = 1.0f;
-
-    Graph graph = create_graph(width, height);
-    u64* rng = init_rng(seed);
-    fill_with_noise(graph, width, height, threshhold, rng, scale);
-    //line the graph with walls
-    /*for (int x = 0; x < width; x++) {
-        graph[x] = 1;
-        graph[x + width * (height - 1)] = 1;
-    }
-    for (int y = 0; y < height; y++) {
-        graph[width * y] = 1;
-        graph[width - 1 + width * y] = 1;
-    }*/
-    //empty top left and bottom left corners because we want to path from corner to corner
-    graph[0] = 0; 
-    graph[width * height - 1] = 0;
-
+    noise_thresh = -0.3f;
+    noise_scale = 1.0f;
+    
     FILE* fp = fopen("output.txt", "w");
-    if (fp == NULL) {
-        fprintf(stderr, "Could not open output file\n");
-        free(graph);
-        return 1;
-    }
+
+    Graph graph = generate_graph(fp, width, height, seed, noise_thresh, noise_scale);
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            fprintf(fp, "%d ", graph[y * width + x]);
-        }
-        fprintf(fp, "\n");
-    }
-    fprintf(fp, "\n");
-
-    connect_graph(graph, width, height, rng);
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            fprintf(fp, "%d ", graph[y * width + x]);
+            fprintf(fp, "%d ", graph[x + width * y]);
         }
         fprintf(fp, "\n");
     }

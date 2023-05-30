@@ -81,9 +81,8 @@ float noise_2d(Graph perm_table, int x, int y, float scale) {
     return lerp(v, x1, x2);
 }
 
-
-//fill the graph with noise between 0 and max
-void fill_with_noise(Graph graph, int width, int height, float threshold, u64* rng, float scale) {
+//fill the graph with walls, based on perlin noise
+void fill_with_noise(Graph graph, int width, int height, float thresh, u64* rng, float scale) {
     int perm_table[512] = { 0 };
 
     for (int i = 0; i < 256; i++) {
@@ -106,7 +105,7 @@ void fill_with_noise(Graph graph, int width, int height, float threshold, u64* r
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             float noise = noise_2d(&perm_table[0], x, y, scale);
-            graph[x + width * y] = noise > threshold ? 1 : 0;
+            graph[x + width * y] = noise > thresh ? 1 : 0;
         }
     }
 }
