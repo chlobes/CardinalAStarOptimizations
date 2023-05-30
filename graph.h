@@ -1,7 +1,7 @@
 #pragma once
 
-#define Cell int
-#define Graph Cell*
+typedef int Cell;
+typedef Cell* Graph;
 
 //we wish to profile performance, and we know the topology of our graph, so we will use a 2d array instead of a slow data structure
 

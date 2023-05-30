@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 
-#define u64 uint64_t
+typedef uint64_t u64;
 
 //an xorshift pseudorandom generator I wrote in rust a long time ago, translated to C
 
