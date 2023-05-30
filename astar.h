@@ -2,7 +2,6 @@
 #include "graph.h"
 #include <stdlib.h>
 
-#define dist(a, b) (abs((a) - (b)))
 #define max(a, b) (a > b ? a : b)
 
 void backtrace_path(Path* path, unsigned char* closed_set, int width, int height, int num_steps, Coord end) {
@@ -12,10 +11,22 @@ void backtrace_path(Path* path, unsigned char* closed_set, int width, int height
     Coord current = end;
     for (int step = num_steps - 1; step >= 0; step--) {
         path->steps[step] = current;
-
-        unsigned char direction = closed_set[current.y * width + current.x];
-        current.x -= ((int)(direction >> 4)) - 1;
-        current.y -= ((int)(direction & 0xF)) - 2;
+        
+        //reverse the step that was done previously
+        switch (closed_set[current.y * width + current.x]) {
+            case 1: //right
+                current.x -= 1;
+                break;
+            case 2: // down
+                current.y -= 1;
+                break;
+            case 3: // left
+                current.x += 1;
+                break;
+            case 4: // up
+                current.y += 1;
+                break;
+        }
     }
 }
 
@@ -46,20 +57,32 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
             return result;
         }
 
-        for (int i = 0; i < 4; i++) {
-            int dir = (i / 2) * -2 + 1;
-            int dx = (i % 2) * dir;
-            int dy = dir - dx;
-
-            Node node;
-            node.x = current.x + dx;
-            node.y = current.y + dy;
-
-            if (node.x < 0 || node.x >= width || node.y < 0 || node.y >= height) { //out of bounds
-                continue;
+        Node node;
+        for (unsigned char i = 1; i < 5; i++) {
+            switch (i) {
+                case 1: //right
+                    if (current.x + 1 >= width) continue;
+                    node.x = current.x + 1;
+                    node.y = current.y;
+                    break;
+                case 2: // down
+                    if (current.y + 1 >= height) continue;
+                    node.x = current.x;
+                    node.y = current.y + 1;
+                    break;
+                case 3: // left
+                    if (current.x - 1 < 0) continue;
+                    node.x = current.x - 1;
+                    node.y = current.y;
+                    break;
+                case 4: // up
+                    if (current.y - 1 < 0) continue;
+                    node.x = current.x;
+                    node.y = current.y - 1;
+                    break;
             }
 
-            if (graph[node.y * width + node.x] || closed_set[node.y * width + node.x]) { //wall or already checked
+            if (graph[node.x + width * node.y] || closed_set[node.x + width * node.y]) { //wall or already checked
                 continue;
             }
 
@@ -67,7 +90,7 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
             node.h = abs(node.x - end.x) + abs(node.y - end.y); //heuristic is manhattan distance, this should be admissible
             node.f = node.g + node.h;
 
-            closed_set[node.x + width * node.y] = ((dx + 1) << 4) + (dy + 2);
+            closed_set[node.x + width * node.y] = i;
             heap_push(&open_set, node);
             result.nodes_pushed += 1;
             result.largest_heap = max(result.largest_heap, open_set.size);
