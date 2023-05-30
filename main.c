@@ -16,7 +16,7 @@
 //#include "mincut.h"
 
 //generates a graph of walls and empty nodes, the empty nodes are always connected, and the top left and bottom right right corners are always empty
-Graph generate_graph(FILE* fp, int width, int height, u64 seed, float noise_thresh, float noise_scale) {
+Graph generate_graph(FILE* debug, int width, int height, u64 seed, float noise_thresh, float noise_scale) {
     Graph graph = create_graph(width, height);
     u64* rng = init_rng(seed);
 
@@ -27,11 +27,11 @@ Graph generate_graph(FILE* fp, int width, int height, u64 seed, float noise_thre
     if (DEBUG) {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                fprintf(fp, "%d ", graph[y * width + x]);
+                fprintf(debug, "%d ", graph[y * width + x]);
             }
-            fprintf(fp, "\n");
+            fprintf(debug, "\n");
         }
-        fprintf(fp, "\n");
+        fprintf(debug, "\n");
     }
 
     connect_graph(graph, width, height, rng);
@@ -43,6 +43,7 @@ int main() {
     int width, height;
     u64 seed;
     float noise_thresh, noise_scale;
+    FILE* debug;
 
     if (USER_INPUT) {
         printf("enter grid width: ");
@@ -63,20 +64,21 @@ int main() {
         noise_scale = 1.0f;
     }
     
-    FILE* fp = fopen("output.txt", "w");
+    if (DEBUG) {
+        debug = fopen("debug.txt", "w");
+    }
 
-    Graph graph = generate_graph(fp, width, height, seed, noise_thresh, noise_scale);
+    Graph graph = generate_graph(debug, width, height, seed, noise_thresh, noise_scale);
 
     if (DEBUG) {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                fprintf(fp, "%d ", graph[x + width * y]);
+                fprintf(debug, "%d ", graph[x + width * y]);
             }
-            fprintf(fp, "\n");
+            fprintf(debug, "\n");
         }
+        fprintf(debug, "\n");
     }
-
-    fprintf(fp, "\n");
 
     Path path = astar(graph, width, height, (Coord) { 0, 0 }, (Coord) { width - 1, height - 1 });
 
@@ -98,15 +100,15 @@ int main() {
             for (int x = 0; x < width; x++) {
                 // If the node is on the path, print an "X", otherwise print the node cost.
                 if (tempGrid[y * width + x] == -1) {
-                    fprintf(fp, "X ");
+                    fprintf(debug, "X ");
                 }
                 else {
-                    fprintf(fp, "%d ", tempGrid[y * width + x]);
+                    fprintf(debug, "%d ", tempGrid[y * width + x]);
                 }
             }
-            fprintf(fp, "\n");
+            fprintf(debug, "\n");
         }
-        fprintf(fp, "\n");
+        fprintf(debug, "\n");
         free(tempGrid);
     }
 
@@ -114,7 +116,9 @@ int main() {
 
     //TODO: cellular automata comparison
 
-    fclose(fp);
+    if (DEBUG) {
+        fclose(debug);
+    }
     free(graph);
     return 0;
 }
