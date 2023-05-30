@@ -38,21 +38,16 @@ int main() {
     u64 seed;
     float noise_thresh, noise_scale;
 
-    /*printf("Enter width: ");
+    printf("enter grid width: ");
     scanf("%d", &width);
-    printf("Enter height: ");
+    printf("enter grid height: ");
     scanf("%d", &height);
-    printf("Enter max value: ");
-    scanf("%d", &max_value);
-    printf("Enter seed: ");
-    scanf("%zu", &seed);
-    printf("Enter scale: ");
-    scanf("%f", &scale);*/
-    width = 10;
-    height = 10;
-    seed = 4;
-    noise_thresh = -0.3f;
-    noise_scale = 1.0f;
+    printf("enter rng seed: ");
+    scanf("%lu", &seed);
+    printf("enter noise threshold (-1 to 1): ");
+    scanf("%f", &noise_thresh);
+    printf("enter noise scale: ");
+    scanf("%f", &noise_scale);
     
     FILE* fp = fopen("output.txt", "w");
 
