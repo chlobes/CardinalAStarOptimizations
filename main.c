@@ -3,6 +3,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define USER_INPUT 0
+#define DEBUG 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,13 +24,15 @@ Graph generate_graph(FILE* fp, int width, int height, u64 seed, float noise_thre
     graph[0] = 0;
     graph[width * height - 1] = 0;
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            fprintf(fp, "%d ", graph[y * width + x]);
+    if (DEBUG) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                fprintf(fp, "%d ", graph[y * width + x]);
+            }
+            fprintf(fp, "\n");
         }
         fprintf(fp, "\n");
     }
-    fprintf(fp, "\n");
 
     connect_graph(graph, width, height, rng);
 
@@ -64,11 +67,13 @@ int main() {
 
     Graph graph = generate_graph(fp, width, height, seed, noise_thresh, noise_scale);
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            fprintf(fp, "%d ", graph[x + width * y]);
+    if (DEBUG) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                fprintf(fp, "%d ", graph[x + width * y]);
+            }
+            fprintf(fp, "\n");
         }
-        fprintf(fp, "\n");
     }
 
     fprintf(fp, "\n");
@@ -78,35 +83,36 @@ int main() {
     printf("total path steps %d\n", path.num_steps);
     //printf("total path cost %d\n", path.cost);
 
-    // Create a temporary grid for printing.
-    Graph tempGrid = create_graph(width, height);
-    memcpy(tempGrid, graph, width * height * sizeof(Cell));
+    if (DEBUG) {
+        // Create a temporary grid for printing.
+        Graph tempGrid = create_graph(width, height);
+        memcpy(tempGrid, graph, width * height * sizeof(Cell));
 
-    // Replace path nodes in the temporary grid with a special marker -1
-    for (int i = 0; i < path.num_steps; i++) {
-        Coord c = path.steps[i];
-        tempGrid[c.y * width + c.x] = -1;
-    }
+        // Replace path nodes in the temporary grid with a special marker -1
+        for (int i = 0; i < path.num_steps; i++) {
+            Coord c = path.steps[i];
+            tempGrid[c.y * width + c.x] = -1;
+        }
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            // If the node is on the path, print an "X", otherwise print the node cost.
-            if (tempGrid[y * width + x] == -1) {
-                fprintf(fp, "X ");
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                // If the node is on the path, print an "X", otherwise print the node cost.
+                if (tempGrid[y * width + x] == -1) {
+                    fprintf(fp, "X ");
+                }
+                else {
+                    fprintf(fp, "%d ", tempGrid[y * width + x]);
+                }
             }
-            else {
-                fprintf(fp, "%d ", tempGrid[y * width + x]);
-            }
+            fprintf(fp, "\n");
         }
         fprintf(fp, "\n");
+        free(tempGrid);
     }
-    fprintf(fp, "\n");
 
     free_path(&path);
 
     //TODO: cellular automata comparison
-
-    free(tempGrid);
 
     fclose(fp);
     free(graph);
