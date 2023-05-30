@@ -112,7 +112,7 @@ int main() {
         width = 100;
         height = 100;
         seed = 3;
-        noise_thresh = -0.25f;
+        noise_thresh = -0.15f;
         noise_scale = 0.1f;
     }
     

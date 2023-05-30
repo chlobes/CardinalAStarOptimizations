@@ -16,7 +16,7 @@ Coord find(Graph graph, int width, int height, Cell target, int start_x, int sta
             y %= height;
         }
         if (x == start_x && y == start_y) {
-            return (Coord) { INT_MAX, INT_MAX }; //no points left in the graph
+            return (Coord) { INT_MAX, INT_MAX }; //no targets left in the graph
         }
     }
     return (Coord) { x, y }; //found one
@@ -47,7 +47,7 @@ void connect_graph(Graph graph, int width, int height, u64* rng) {
     while (1) {
         flood(graph, width, height, next.x, next.y);
         prev = next;
-        next = find(graph, width, height, 0, prev.x, prev.y);
+        next = find(graph, width, height, 0, (prev.x + width / 2) % width, (prev.y + height / 2) % height);
         if (next.x == INT_MAX) break;
         
         while (graph[prev.x + width * prev.y]) { //take random steps towards a known empty space until we hit an empty space, this will always terminate
@@ -75,8 +75,7 @@ void connect_graph(Graph graph, int width, int height, u64* rng) {
                         if (prev.x == next.x) continue;
                         if (prev.x < next.x) {
                             prev.x += 1;
-                        }
-                        else {
+                        } else {
                             prev.x -= 1;
                         }
                     }
@@ -84,8 +83,7 @@ void connect_graph(Graph graph, int width, int height, u64* rng) {
                         if (prev.y == next.y) continue;
                         if (prev.y < next.y) {
                             prev.y += 1;
-                        }
-                        else {
+                        } else {
                             prev.y -= 1;
                         }
                     }
