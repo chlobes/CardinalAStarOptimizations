@@ -21,7 +21,8 @@ typedef struct coord {
 typedef struct path {
     Coord* steps;
     int num_steps;
-    //int cost;
+    int nodes_pushed; //how many times we pushed onto the heap
+    int largest_heap; //the largest that the heap got, we expect this will be close to nodes_pushed but want to confirm
 } Path;
 
 void free_path(Path* path) {

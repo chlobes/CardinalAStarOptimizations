@@ -57,7 +57,9 @@ void profile_pathfinder(FILE* debug, FILE* output, PathfinderFunction f, Graph g
     interval = (double)(end_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
 
     fprintf(output, "time %fs\n", interval);
-    fprintf(output, "path length %d", path.num_steps);
+    fprintf(output, "path length %d\n", path.num_steps);
+    fprintf(output, "nodes pushed %d\n", path.nodes_pushed);
+    fprintf(output, "largest heap %d\n", path.largest_heap);
 
     if (DEBUG) {
         // Create a temporary grid for printing.

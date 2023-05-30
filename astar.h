@@ -3,23 +3,20 @@
 #include <stdlib.h>
 
 #define dist(a, b) (abs((a) - (b)))
+#define max(a, b) (a > b ? a : b)
 
-Path backtrace_path(unsigned char* closed_set, int width, int height, int num_steps, Coord end) {
-    Path path;
-    path.steps = (Coord*)malloc(num_steps * sizeof(Coord));
-    path.num_steps = num_steps;
-    //path.cost = cost;
+void backtrace_path(Path* path, unsigned char* closed_set, int width, int height, int num_steps, Coord end) {
+    path->steps = (Coord*)malloc(num_steps * sizeof(Coord));
+    path->num_steps = num_steps;
 
     Coord current = end;
     for (int step = num_steps - 1; step >= 0; step--) {
-        path.steps[step] = current;
+        path->steps[step] = current;
 
         unsigned char direction = closed_set[current.y * width + current.x];
         current.x -= ((int)(direction >> 4)) - 1;
         current.y -= ((int)(direction & 0xF)) - 2;
     }
-
-    return path;
 }
 
 //written with chatgpt's assistance, but it's really not great at something this complex
@@ -27,6 +24,7 @@ Path backtrace_path(unsigned char* closed_set, int width, int height, int num_st
 //regular old A* on a uniform grid, diagonals are not permitted
 //any cell that isn't a zero is treated as a wall
 Path astar(Graph graph, int width, int height, Coord start, Coord end) {
+    Path result;
     Heap open_set = create_heap((width * height + 7) / 8);
 
     unsigned char* closed_set = malloc(width * height * sizeof(unsigned char));
@@ -35,12 +33,14 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
     closed_set[start.x + width * start.y] = 1;
     Node node = (Node) { start.x, start.y, 1, 0, 1 };
     heap_push(&open_set, node);
+    result.nodes_pushed = 1;
+    result.largest_heap = 1;
 
     while (open_set.size > 0) {
         Node current = heap_pop(&open_set);
 
         if (current.x == end.x && current.y == end.y) { //found the destination
-            Path result = backtrace_path(closed_set, width, height, current.g, end);
+            backtrace_path(&result, closed_set, width, height, current.g, end);
             free_heap(&open_set);
             free(closed_set);
             return result;
@@ -69,6 +69,8 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
 
             closed_set[node.x + width * node.y] = ((dx + 1) << 4) + (dy + 2);
             heap_push(&open_set, node);
+            result.nodes_pushed += 1;
+            result.largest_heap = max(result.largest_heap, open_set.size);
         }
     }
 
