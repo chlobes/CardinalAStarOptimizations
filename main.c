@@ -16,7 +16,7 @@ Graph generate_graph(FILE* fp, int width, int height, u64 seed, float noise_thre
     Graph graph = create_graph(width, height);
     u64* rng = init_rng(seed);
 
-    fill_with_noise(graph, width, height, noise_thresh, rng, noise_scale);
+    fill_with_noise(graph, width, height, rng, noise_thresh, noise_scale);
     graph[0] = 0;
     graph[width * height - 1] = 0;
 

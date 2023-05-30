@@ -82,7 +82,7 @@ float noise_2d(Graph perm_table, int x, int y, float scale) {
 }
 
 //fill the graph with walls, based on perlin noise
-void fill_with_noise(Graph graph, int width, int height, float thresh, u64* rng, float scale) {
+void fill_with_noise(Graph graph, int width, int height, u64* rng, float thresh, float scale) {
     int perm_table[512] = { 0 };
 
     for (int i = 0; i < 256; i++) {
