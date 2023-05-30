@@ -38,16 +38,16 @@ float fade(float t) {
 
 float grad_2d(int hash, float x, float y) {
     switch (hash & 3) {
-    case 0: return x + y;
-    case 1: return -x + y;
-    case 2: return x - y;
-    default: return -x - y;
+        case 0: return x + y;
+        case 1: return -x + y;
+        case 2: return x - y;
+        default: return -x - y;
     }
 }
 
-float noise_2d(Graph perm_table, int x, int y, float scale) {
-    float xf = (float)x + 0.479f;
-    float yf = (float)y + 0.479f;
+float noise_2d(int* perm_table, int x, int y, float scale) {
+    float xf = ((float)x + 0.479f) * scale;
+    float yf = ((float)y + 0.479f) * scale;
 
     int xi = ((int)floorf(xf)) & 255;
     int yi = ((int)floorf(yf)) & 255;
@@ -81,9 +81,9 @@ float noise_2d(Graph perm_table, int x, int y, float scale) {
     return lerp(v, x1, x2);
 }
 
-//fill the graph with walls, based on perlin noise
+//fill the graph with walls using perlin noise
 void fill_with_noise(Graph graph, int width, int height, u64* rng, float thresh, float scale) {
-    int perm_table[512] = { 0 };
+    int perm_table[512];
 
     for (int i = 0; i < 256; i++) {
         perm_table[i] = PERMUTATION_TABLE[i];
