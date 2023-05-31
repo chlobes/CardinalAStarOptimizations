@@ -18,6 +18,24 @@
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="graph.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="graph_connect.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="heap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="noise.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rng.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="astar.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="graph.h">
@@ -36,9 +54,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="graph_connect.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="prune.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

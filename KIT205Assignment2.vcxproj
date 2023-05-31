@@ -127,7 +127,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="astar.c" />
+    <ClCompile Include="graph.c" />
+    <ClCompile Include="graph_connect.c" />
+    <ClCompile Include="heap.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="noise.c" />
+    <ClCompile Include="rng.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="astar.h" />
@@ -135,7 +141,6 @@
     <ClInclude Include="graph_connect.h" />
     <ClInclude Include="heap.h" />
     <ClInclude Include="noise.h" />
-    <ClInclude Include="prune.h" />
     <ClInclude Include="rng.h" />
   </ItemGroup>
   <ItemGroup>
