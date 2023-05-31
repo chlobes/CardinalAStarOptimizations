@@ -36,6 +36,9 @@
     <ClCompile Include="astar.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="lookahead.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="graph.h">
@@ -54,6 +57,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="graph_connect.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lookahead.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

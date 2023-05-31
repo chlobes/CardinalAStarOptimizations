@@ -13,6 +13,7 @@
 #include "astar.h"
 #include "graph_connect.h"
 #include "rng.h"
+#include "lookahead.h"
 //#include "mincut.h"
 
 typedef Path (*PathfinderFunction)(Graph, int, int, Coord, Coord);
@@ -42,11 +43,16 @@ Graph generate_graph(FILE* debug, int width, int height, u64 seed, float noise_t
 }
 
 //profiling function written by chatgpt
-void profile_pathfinder(FILE* debug, FILE* output, PathfinderFunction f, Graph graph, int width, int height, Coord start, Coord end) {
+void profile_pathfinder(FILE* debug, FILE* output, char* image_output, PathfinderFunction f, Graph graph, int width, int height, Coord start, Coord end) {
     LARGE_INTEGER frequency;
     LARGE_INTEGER start_time;
     LARGE_INTEGER end_time;
     double interval;
+
+    int rowSize = (width * 3 + 3) & (~3); // 24-bit bitmap, padded to multiple of 4 bytes
+    int dataSize = rowSize * height;
+    int fileSize = sizeof(BMPHeader) + sizeof(BMPInfoHeader) + dataSize;
+    FILE* bmp = fopen(image_output, "wb");
 
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start_time); //start the timer
@@ -109,8 +115,8 @@ int main() {
         printf("enter noise scale: ");
         scanf("%f", &noise_scale);
     } else {
-        width = 100;
-        height = 100;
+        width = 2000;
+        height = 2000;
         seed = 3;
         noise_thresh = -0.15f;
         noise_scale = 0.1f;
@@ -133,8 +139,10 @@ int main() {
         fprintf(debug, "\n");
     }
 
-    fprintf(output, "astar:");
-    profile_pathfinder(debug, output, astar, graph, width, height, (Coord) { 0, 0 }, (Coord) { width - 1, height - 1 });
+    fprintf(output, "astar:\n");
+    profile_pathfinder(debug, output, "astar.bmp", astar, graph, width, height, (Coord) { 0, 0 }, (Coord) { width - 1, height - 1 });
+    fprintf(output, "\nlookahead:\n");
+    profile_pathfinder(debug, output, "lookahead.bmp", lookahead, graph, width, height, (Coord) { 0, 0 }, (Coord) { width - 1, height - 1 });
 
     //TODO: cellular automata comparison
 

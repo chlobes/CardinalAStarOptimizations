@@ -50,12 +50,7 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
     while (open_set.size > 0) {
         Node current = heap_pop(&open_set);
 
-        if (current.x == end.x && current.y == end.y) { //found the destination
-            backtrace_path(&result, closed_set, width, height, current.g, end);
-            free_heap(&open_set);
-            free(closed_set);
-            return result;
-        }
+
 
         Node node;
         for (unsigned char i = 1; i < 5; i++) {
@@ -82,9 +77,7 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
                     break;
             }
 
-            if (graph[node.x + width * node.y] || closed_set[node.x + width * node.y]) { //wall or already checked
-                continue;
-            }
+            if (graph[node.x + width * node.y] || closed_set[node.x + width * node.y]) continue; //wall or already checked
 
             node.g = current.g + 1; //uniform cost of 1
             node.h = abs(node.x - end.x) + abs(node.y - end.y); //heuristic is manhattan distance, this should be admissible
@@ -94,6 +87,13 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
             heap_push(&open_set, node);
             result.nodes_pushed += 1;
             result.largest_heap = max(result.largest_heap, open_set.size);
+
+            if (node.x == end.x && node.y == end.y) { //found the destination
+                backtrace_path(&result, closed_set, width, height, node.g, end);
+                free_heap(&open_set);
+                free(closed_set);
+                return result;
+            }
         }
     }
 
