@@ -31,10 +31,10 @@ typedef struct {
 } BMPInfoHeader;
 #pragma pack(pop)
 
-void write_bmp(char* filename, Graph graph, int width, int height)
+void write_bmp(char* filename, Graph graph)
 {
-    int rowSize = (width * 3 + 3) & (~3); // 24-bit bitmap, padded to multiple of 4 bytes
-    int dataSize = rowSize * height;
+    int rowSize = (graph.width * 3 + 3) & (~3); // 24-bit bitmap, padded to multiple of 4 bytes
+    int dataSize = rowSize * graph.height;
     int fileSize = sizeof(BMPHeader) + sizeof(BMPInfoHeader) + dataSize;
 
     FILE* file = fopen(filename, "wb");
@@ -49,41 +49,26 @@ void write_bmp(char* filename, Graph graph, int width, int height)
     fwrite(&header, sizeof(BMPHeader), 1, file);
 
     // Write bitmap info header
-    BMPInfoHeader infoHeader = { sizeof(BMPInfoHeader), width, height, 1, 24, 0, dataSize, 0, 0, 0, 0 };
+    BMPInfoHeader infoHeader = { sizeof(BMPInfoHeader), graph.width, graph.height, 1, 24, 0, dataSize, 0, 0, 0, 0 };
     fwrite(&infoHeader, sizeof(BMPInfoHeader), 1, file);
 
     // Write pixel data
     uint8_t* rowBuffer = malloc(rowSize * sizeof(uint8_t));
-    for (int y = height - 1; y >= 0; y--)
+    for (int y = graph.height - 1; y >= 0; y--)
     {
-        for (int x = 0; x < width; x++)
+        for (int x = 0; x < graph.width; x++)
         {
-            int index = y * width + x;
-            int pixel = graph[index];
-            uint8_t red, green, blue;
+            int pixel = cell(graph, (Pos) { x, y });
+            uint8_t red = 0, green = 0, blue = 0;
 
-            if (pixel == 0)
-            {
+            if (pixel == 0) {
+                red = 255, green = 255, blue = 255;
+            }
+            else if (pixel == 1) {
+            } else if (pixel == 255) {
                 red = 255;
+            } else if (pixel == 2) {
                 green = 255;
-                blue = 255;
-            }
-            else if (pixel == 1)
-            {
-                red = 0;
-                green = 0;
-                blue = 0;
-            }
-            else if (pixel == 255)
-            {
-                red = 255;
-                green = 0;
-                blue = 0;
-            }
-            else if (pixel == 2) {
-                red = 0;
-                green = 255;
-                blue = 0;
             }
 
             int offset = x * 3;

@@ -363,4 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 
 output.txt
-/debug.txt
+debug.txt
+*.bmp

@@ -6,16 +6,16 @@
 #include <stdlib.h>
 
 #define set_child(dx, dy) do {\
-    child.x = current.x + (dx); \
-    child.y = current.y + (dy); \
+    child.pos.x = current.pos.x + (dx); \
+    child.pos.y = current.pos.y + (dy); \
     child.g = current.g + 1; \
-    child.h = abs(child.x - end.x) + abs(child.y - end.y); \
+    child.h = heuristic(child.pos, end); \
     child.f = child.g + child.h; \
 } while (0)
 
 #define try_push_child(dir) do { \
-    if (graph[child.x + width * child.y] || closed_set[child.x + width * child.y]) break; \
-    closed_set[child.x + width * child.y] = (dir); \
+    if (cell(graph, child.pos) || cell(closed_set, child.pos)) break; \
+    set_cell(closed_set, child.pos, dir); \
     if (!next_found && child.h < current.h) { \
         next = child; \
         next_found = 1; \
@@ -28,19 +28,18 @@
 } while(0)
 
 //an optimization of A* that takes advantage of properties of the uniform grid
-Path lookahead(Graph graph, int width, int height, Coord start, Coord end) {
+Path lookahead(Graph graph, Pos start, Pos end) {
     Path result;
-    Heap open_set = create_heap((width * height + 7) / 8);
+    Heap open_set = create_heap((graph.width * graph.height + 7) / 8);
     Node current, child;
     Node next; //optimization 3: we can sometimes skip heap insertions
     int next_found = 0;
 
-    unsigned char* closed_set = malloc(width * height * sizeof(unsigned char));
-    memset(closed_set, 0, width * height * sizeof(unsigned char));
+    Graph closed_set = create_graph(graph.width, graph.height);
 
     int h = abs(start.x - end.x) + abs(start.y - end.y);
     current = (Node){ start.x, start.y, 1, h, h + 1 };
-    closed_set[start.x + width * start.y] = 1;
+    set_cell(closed_set, start, 1);
     result.nodes_pushed = 0;
     result.largest_heap = 0;
 
@@ -51,59 +50,54 @@ Path lookahead(Graph graph, int width, int height, Coord start, Coord end) {
         
         set_child(dx, dy);
 
-        if (child.x < 0 || child.y < 0 || child.x >= width || child.y >= height) continue; //out of bounds
+        if (child.pos.x < 0 || child.pos.y < 0 || child.pos.x >= graph.width || child.pos.y >= graph.height) continue; //out of bounds
         try_push_child(i);
     }
 
     while (1) {
         current = next;
 
-        //printf("%d %d\n", current.x, current.y);
-
-        if (current.x == end.x && current.y == end.y) { //found the destination
-            backtrace_path(&result, closed_set, width, height, current.g, end);
+        if (current.pos.x == end.x && current.pos.y == end.y) { //found the destination
+            backtrace_path(&result, closed_set, current.g, end);
             free_heap(&open_set);
-            free(closed_set);
+            free_graph(closed_set);
             return result;
         }
 
         next_found = 0;
 
-        switch (closed_set[current.x + width * current.y]) { //optimization 1: check where we moved from so we don't check the parent
+        switch (cell(closed_set, current.pos)) { //optimization 1: check where we moved from so we don't check the parent
         case 1: //right
-            if (current.x + 1 < width) {
+            if (current.pos.x + 1 < graph.width) {
                 set_child(1, 0);
                 try_push_child(1);
             }
-            if (current.y + 1 < height) {
-                if (graph[current.x - 1 + width * (current.y + 1)]) { //optimization 2: if our parent could've pathed to this node, skip it
+            if (current.pos.y + 1 < graph.height) {
+                if (cell(graph, (Pos) { current.pos.x - 1, current.pos.y + 1 })) { //optimization 2: if our parent could've pathed to this node, skip it
                     set_child(0, 1);
                     try_push_child(2);
                 }
             }
-            if (current.y - 1 >= 0) {
+            if (current.pos.y - 1 >= 0) {
                 //if (graph[current.x - 1 + width * (current.y - 1)]) { //optimization 2: if our parent could've pathed to this node, skip it
                     set_child(0, -1);
                     try_push_child(4);
-                    if (child.x == 12 && child.y == 0) {
-                        printf("a");
-                    }
                 //}
             }
             break;
         case 2: //down
-            if (current.y + 1 < height) {
+            if (current.pos.y + 1 < graph.height) {
                 set_child(0, 1);
                 try_push_child(2);
             }
-            if (current.x + 1 < width) {
+            if (current.pos.x + 1 < graph.width) {
                 //if (graph[current.x + 1 + width * (current.y - 1)]) { //optimization 2: if our parent could've pathed to this node, skip it
                     set_child(1, 0);
                     try_push_child(1);
                 //}
             }
-            if (current.x - 1 >= 0) {
-                if (graph[current.x - 1 + width * (current.y - 1)]) { //optimization 2: if our parent could've pathed to this node, skip it
+            if (current.pos.x - 1 >= 0) {
+                if (cell(graph, (Pos) { current.pos.x - 1, current.pos.y - 1 })) { //optimization 2: if our parent could've pathed to this node, skip it
                     set_child(-1, 0);
                     try_push_child(3);
                 }
@@ -111,20 +105,20 @@ Path lookahead(Graph graph, int width, int height, Coord start, Coord end) {
             
             break;
         case 3: //left
-            if (current.x - 1 >= 0) {
+            if (current.pos.x - 1 >= 0) {
                 set_child(-1, 0);
                 try_push_child(3);
             }
-            if (current.y + 1 < height) {
+            if (current.pos.y + 1 < graph.height) {
                 //if (graph[current.x + 1 + width * (current.y + 1)]) { //optimization 2: if our parent could've pathed to this node, skip it
                     set_child(0, 1);
                     try_push_child(2);
                 //}
             }
-            if (current.y - 1 >= 0) {
-                if (graph[current.x + 1 + width * (current.y - 1)]) { //optimization 2: if our parent could've pathed to this node, skip it
+            if (current.pos.y - 1 >= 0) {
+                if (cell(graph, (Pos) { current.pos.x + 1, current.pos.y - 1 })) { //optimization 2: if our parent could've pathed to this node, skip it
                     set_child(0, -1);
-                    if (child.x == 12 && child.y == 0) {
+                    if (child.pos.x == 12 && child.pos.y == 0) {
                         printf("b");
                     }
                     try_push_child(4);
@@ -132,18 +126,18 @@ Path lookahead(Graph graph, int width, int height, Coord start, Coord end) {
             }
             break;
         case 4: //up
-            if (current.y - 1 >= 0) {
+            if (current.pos.y - 1 >= 0) {
                 set_child(0, -1);
                 try_push_child(4);
             }
-            if (current.x - 1 >= 0) {
+            if (current.pos.x - 1 >= 0) {
                 //if (graph[current.x - 1 + width * (current.y + 1)]) { //optimization 2: if our parent could've pathed to this node, skip it
                     set_child(-1, 0);
                     try_push_child(3);
                 //}
             }
-            if (current.x + 1 < width) {
-                if (graph[current.x + 1 + width * (current.y + 1)]) { //optimization 2: if our parent could've pathed to this node, skip it
+            if (current.pos.x + 1 < graph.width) {
+                if (cell(graph, (Pos) { current.pos.x + 1, current.pos.y + 1 })) { //optimization 2: if our parent could've pathed to this node, skip it
                     set_child(1, 0);
                     try_push_child(1);
                 }

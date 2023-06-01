@@ -79,7 +79,7 @@ float noise_2d(int* perm_table, int x, int y, float scale) {
 }
 
 //fill the graph with walls using perlin noise
-void fill_with_noise(Graph graph, int width, int height, u64* rng, float thresh, float scale) {
+void fill_with_noise(Graph graph, u64* rng, float thresh, float scale) {
     int perm_table[512];
 
     for (int i = 0; i < 256; i++) {
@@ -99,10 +99,10 @@ void fill_with_noise(Graph graph, int width, int height, u64* rng, float thresh,
         perm_table[i + 256] = perm_table[i];
     }
 
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
+    for (int x = 0; x < graph.width; x++) {
+        for (int y = 0; y < graph.height; y++) {
             float noise = noise_2d(&perm_table[0], x, y, scale);
-            graph[x + width * y] = noise > thresh ? 1 : 0;
+            set_cell(graph, (Pos) { x, y }, noise > thresh ? 1 : 0);
         }
     }
 }

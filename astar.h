@@ -3,6 +3,8 @@
 
 #define max(a, b) (a > b ? a : b)
 
-void backtrace_path(Path* path, unsigned char* closed_set, int width, int height, int num_steps, Coord end);
+int heuristic(Pos pos, Pos end);
 
-Path astar(Graph graph, int width, int height, Coord start, Coord end);
+void backtrace_path(Path* path, Graph closed_set, int num_steps, Pos end);
+
+Path astar(Graph graph, Pos start, Pos end);

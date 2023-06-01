@@ -2,18 +2,23 @@
 #include "astar.h"
 #include "heap.h"
 #include "graph.h"
+#include "stdio.h"
 #include <stdlib.h>
 
-void backtrace_path(Path* path, unsigned char* closed_set, int width, int height, int num_steps, Coord end) {
-    path->steps = (Coord*)malloc(num_steps * sizeof(Coord));
+int heuristic(Pos pos, Pos end) { //manhattan distance is admissible in this case
+    return abs(pos.x - end.x) + abs(pos.y - end.y);
+}
+
+void backtrace_path(Path* path, Graph closed_set, int num_steps, Pos end) {
+    path->steps = (Pos*)malloc(num_steps * sizeof(Pos));
     path->num_steps = num_steps;
 
-    Coord current = end;
+    Pos current = end;
     for (int step = num_steps - 1; step >= 0; step--) {
         path->steps[step] = current;
         
         //reverse the step that was done previously
-        switch (closed_set[current.y * width + current.x]) {
+        switch (cell(closed_set, current)) {
             case 1: //right
                 current.x -= 1;
                 break;
@@ -34,15 +39,14 @@ void backtrace_path(Path* path, unsigned char* closed_set, int width, int height
 
 //regular old A* on a uniform grid, diagonals are not permitted
 //any cell that isn't a zero is treated as a wall
-Path astar(Graph graph, int width, int height, Coord start, Coord end) {
+Path astar(Graph graph, Pos start, Pos end) {
     Path result;
-    Heap open_set = create_heap((width * height + 7) / 8);
-
-    unsigned char* closed_set = malloc(width * height * sizeof(unsigned char));
-    memset(closed_set, 0, width * height * sizeof(unsigned char));
+    Heap open_set = create_heap((graph.width * graph.height + 7) / 8);
+    
+    Graph closed_set = create_graph(graph.width, graph.height);
 
     int h = abs(start.x - end.x) + abs(start.y - end.y);
-    closed_set[start.x + width * start.y] = 1;
+    set_cell(closed_set, start, 1);
     Node node = (Node) { start.x, start.y, 1, h, 1 + h };
     heap_push(&open_set, node);
     result.nodes_pushed = 1;
@@ -53,44 +57,41 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
 
         Node node;
         for (unsigned char i = 1; i < 5; i++) {
+            node.pos = current.pos;
             switch (i) {
                 case 1: //right
-                    if (current.x + 1 >= width) continue;
-                    node.x = current.x + 1;
-                    node.y = current.y;
+                    if (node.pos.x + 1 >= graph.width) continue;
+                    node.pos.x += 1;
                     break;
                 case 2: // down
-                    if (current.y + 1 >= height) continue;
-                    node.x = current.x;
-                    node.y = current.y + 1;
+                    if (node.pos.y + 1 >= graph.height) continue;
+                    node.pos.y += 1;
                     break;
                 case 3: // left
-                    if (current.x - 1 < 0) continue;
-                    node.x = current.x - 1;
-                    node.y = current.y;
+                    if (node.pos.x - 1 < 0) continue;
+                    node.pos.x -= 1;
                     break;
                 case 4: // up
-                    if (current.y - 1 < 0) continue;
-                    node.x = current.x;
-                    node.y = current.y - 1;
+                    if (node.pos.y - 1 < 0) continue;
+                    node.pos.y -= 1;
                     break;
             }
 
-            if (graph[node.x + width * node.y] || closed_set[node.x + width * node.y]) continue; //wall or already checked
+            if (cell(graph, node.pos) || cell(closed_set, node.pos)) continue; //wall or already checked
 
             node.g = current.g + 1; //uniform cost of 1
-            node.h = abs(node.x - end.x) + abs(node.y - end.y); //heuristic is manhattan distance, this should be admissible
+            node.h = heuristic(node.pos, end);
             node.f = node.g + node.h;
 
-            closed_set[node.x + width * node.y] = i;
+            set_cell(closed_set, node.pos, i);
             heap_push(&open_set, node);
             result.nodes_pushed += 1;
             result.largest_heap = max(result.largest_heap, open_set.size);
 
-            if (node.x == end.x && node.y == end.y) { //found the destination
-                backtrace_path(&result, closed_set, width, height, node.g, end);
+            if (node.pos.x == end.x && node.pos.y == end.y) { //found the destination
+                backtrace_path(&result, closed_set, node.g, end);
                 free_heap(&open_set);
-                free(closed_set);
+                free_graph(closed_set);
                 return result;
             }
         }

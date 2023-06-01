@@ -17,32 +17,32 @@
 #include "bmp.h"
 //#include "mincut.h"
 
-typedef Path (*PathfinderFunction)(Graph, int, int, Coord, Coord);
+typedef Path (*PathfinderFunction)(Graph, Pos, Pos);
 
 //generates a graph of walls and empty nodes, the empty nodes are always connected, and the top left and bottom right right corners are always empty
 Graph generate_graph(FILE* debug, int width, int height, u64 seed, float noise_thresh, float noise_scale) {
     Graph graph = create_graph(width, height);
     u64* rng = init_rng(seed);
 
-    fill_with_noise(graph, width, height, rng, noise_thresh, noise_scale);
-    graph[0] = 0;
-    graph[width * height - 1] = 0;
+    fill_with_noise(graph, rng, noise_thresh, noise_scale);
+    set_cell(graph, (Pos) { 0, 0 }, 0);
+    set_cell(graph, (Pos) { width - 1, height - 1 }, 0);
 
     if (DEBUG) {
-        write_bmp("before_connection.bmp", graph, width, height);
+        write_bmp("before_connection.bmp", graph);
     }
 
-    connect_graph(graph, width, height, rng);
+    connect_graph(graph, rng);
 
     if (DEBUG) {
-        write_bmp("graph.bmp", graph, width, height);
+        write_bmp("graph.bmp", graph);
     }
 
     return graph;
 }
 
 //profiling function written by chatgpt
-void profile_pathfinder(FILE* debug, FILE* output, FILE* image_output, PathfinderFunction f, Graph graph, int width, int height, Coord start, Coord end) {
+void profile_pathfinder(FILE* debug, FILE* output, FILE* image_output, PathfinderFunction f, Graph graph, Pos start, Pos end) {
     LARGE_INTEGER frequency;
     LARGE_INTEGER start_time;
     LARGE_INTEGER end_time;
@@ -51,7 +51,7 @@ void profile_pathfinder(FILE* debug, FILE* output, FILE* image_output, Pathfinde
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start_time); //start the timer
 
-    Path path = f(graph, width, height, start, end);
+    Path path = f(graph, start, end);
 
     QueryPerformanceCounter(&end_time); //stop the timer
     interval = (double)(end_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
@@ -63,17 +63,17 @@ void profile_pathfinder(FILE* debug, FILE* output, FILE* image_output, Pathfinde
 
     if (DEBUG) {
         // Create a temporary grid for printing.
-        Graph tempGrid = create_graph(width, height);
-        memcpy(tempGrid, graph, width * height * sizeof(Cell));
+        Graph temp = create_graph(graph.width, graph.height);
+        memcpy(temp.cells, graph.cells, graph.width * graph.height * sizeof(Cell));
 
         // Replace path nodes in the temporary grid with a special marker
         for (int i = 0; i < path.num_steps; i++) {
-            Coord c = path.steps[i];
-            tempGrid[c.y * width + c.x] = 255;
+            Pos c = path.steps[i];
+            set_cell(temp, c, 255);
         }
 
-        write_bmp(image_output, tempGrid, width, height);
-        free(tempGrid);
+        write_bmp(image_output, temp);
+        free_graph(temp);
     }
     free_path(&path);
 }
@@ -111,20 +111,10 @@ int main() {
 
     Graph graph = generate_graph(debug, width, height, seed, noise_thresh, noise_scale);
 
-    if (DEBUG) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                fprintf(debug, "%d ", graph[x + width * y]);
-            }
-            fprintf(debug, "\n");
-        }
-        fprintf(debug, "\n");
-    }
-
     fprintf(output, "astar:\n");
-    profile_pathfinder(debug, output, "astar.bmp", astar, graph, width, height, (Coord) { 0, 0 }, (Coord) { width - 1, height - 1 });
+    profile_pathfinder(debug, output, "astar.bmp", astar, graph, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
     fprintf(output, "\nlookahead:\n");
-    profile_pathfinder(debug, output, "lookahead.bmp", lookahead, graph, width, height, (Coord) { 0, 0 }, (Coord) { width - 1, height - 1 });
+    profile_pathfinder(debug, output, "lookahead.bmp", lookahead, graph, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
 
     //TODO: cellular automata comparison
 
@@ -132,7 +122,7 @@ int main() {
         fclose(debug);
     }
     fclose(output);
-    free(graph);
+    free_graph(graph);
     return 0;
 }
 

@@ -1,11 +1,12 @@
 #pragma once
 #include <stdlib.h>
+#include "graph.h"
 
 //binary heap implementation for astar's priority queue, credit to chatgpt
 //except that it created a max heap when I wanted a min heap because it's silly
 
 typedef struct node {
-    int x, y;
+    Pos pos;
     int g;
     int h;
     int f;
