@@ -3,7 +3,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define USER_INPUT 0
-#define DEBUG 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +19,7 @@
 typedef Path (*PathfinderFunction)(Graph, Pos, Pos);
 
 //generates a graph of walls and empty nodes, the empty nodes are always connected, and the top left and bottom right right corners are always empty
-Graph generate_graph(FILE* debug, int width, int height, u64 seed, float noise_thresh, float noise_scale) {
+Graph generate_graph(int width, int height, u64 seed, float noise_thresh, float noise_scale) {
     Graph graph = create_graph(width, height);
     u64* rng = init_rng(seed);
 
@@ -28,21 +27,17 @@ Graph generate_graph(FILE* debug, int width, int height, u64 seed, float noise_t
     set_cell(graph, (Pos) { 0, 0 }, 0);
     set_cell(graph, (Pos) { width - 1, height - 1 }, 0);
 
-    if (DEBUG) {
-        write_bmp("before_connection.bmp", graph);
-    }
+    write_bmp("before_connection.bmp", graph);
 
     connect_graph(graph, rng);
 
-    if (DEBUG) {
-        write_bmp("graph.bmp", graph);
-    }
+    write_bmp("graph.bmp", graph);
 
     return graph;
 }
 
 //profiling function written by chatgpt
-void profile_pathfinder(FILE* debug, FILE* output, FILE* image_output, PathfinderFunction f, Graph graph, Pos start, Pos end) {
+void profile_pathfinder(FILE* output, FILE* image_output, PathfinderFunction f, Graph graph, Pos start, Pos end) {
     LARGE_INTEGER frequency;
     LARGE_INTEGER start_time;
     LARGE_INTEGER end_time;
@@ -83,8 +78,7 @@ int main() {
     int width, height;
     u64 seed;
     float noise_thresh, noise_scale;
-    FILE* debug;
-    FILE* output;
+    FILE* output = fopen("output.txt", "w");
 
     if (USER_INPUT) {
         printf("enter grid width: ");
@@ -104,24 +98,16 @@ int main() {
         noise_thresh = -0.15f;
         noise_scale = 0.1f;
     }
-    
-    if (DEBUG) {
-        debug = fopen("debug.txt", "w");
-    }
-    output = fopen("output.txt", "w");
 
-    Graph graph = generate_graph(debug, width, height, seed, noise_thresh, noise_scale);
+    Graph graph = generate_graph(width, height, seed, noise_thresh, noise_scale);
 
     fprintf(output, "astar:\n");
-    profile_pathfinder(debug, output, "astar.bmp", astar, graph, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
+    profile_pathfinder(output, "astar.bmp", astar, graph, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
     fprintf(output, "\nlookahead:\n");
-    profile_pathfinder(debug, output, "lookahead.bmp", lookahead, graph, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
+    profile_pathfinder(output, "lookahead.bmp", lookahead, graph, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
 
     //TODO: cellular automata comparison
 
-    if (DEBUG) {
-        fclose(debug);
-    }
     fclose(output);
     free_graph(graph);
     return 0;
