@@ -16,15 +16,11 @@
     child.h = heuristic(child.pos, end);\
     child.f = child.g + child.h;\
     child.from = dir;\
-    result.nodes_discovered++;\
     if (!next_found && child.h < parent.h) {\
         next = child;\
         next_found = 1;\
-    }\
-    else {\
+    } else {\
         heap_push(&open_set, child);\
-        result.nodes_pushed++;\
-        result.largest_heap = max(result.largest_heap, open_set.size);\
     }\
 } while (0)
 
@@ -38,11 +34,12 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
     int h = abs(start.x - end.x) + abs(start.y - end.y);
     parent = (Node){ start.x, start.y, 1, h, h + 1, 1 };
     set_cell(closed_set, start, 1);
-    result.nodes_discovered = 1;
+    #ifdef PATH_INFO
+    result.nodes_discovered = 5;
     result.nodes_pushed = 0;
     result.nodes_expanded = 1;
     result.largest_heap = 0;
-    
+    #endif
 
     //we need to manually expand the first node if we want to optimize bounds checks in the main loop
     for (unsigned char dir = 2; dir < 6; dir++) {
@@ -51,7 +48,6 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
         
         if (parent.pos.x + dx < 0 || parent.pos.y + dy < 0 || parent.pos.x + dx >= closed_set.width
             || parent.pos.y + dy >= closed_set.height) continue; //out of bounds
-
         add_child(dir);
     }
 
@@ -64,7 +60,9 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
             continue;
         }
         set_cell(closed_set, parent.pos, parent.from);
+        #ifdef PATH_INFO
         result.nodes_expanded++;
+        #endif
 
         if (parent.pos.x == end.x && parent.pos.y == end.y) { //found the destination
             backtrace_path(&result, closed_set, parent.g, end);
@@ -74,6 +72,10 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
 
         next_found = 0;
 
+        #ifdef PATH_INFO
+        result.nodes_discovered += 3;
+        int before_size = open_set.size;
+        #endif
         switch (parent.from) { //optimization 1: check where we moved from so we don't check the parent
         case 2: //right
             if (parent.pos.x + 1 < closed_set.width) {
@@ -137,6 +139,10 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
             }
             break;
         }
+        #ifdef PATH_INFO
+        result.largest_heap = max(result.largest_heap, open_set.size);
+        result.nodes_pushed += open_set.size - before_size;
+        #endif
 
         if (!next_found) {
             if (open_set.size == 0) break;

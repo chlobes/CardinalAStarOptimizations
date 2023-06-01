@@ -5,6 +5,7 @@
 #include "stdio.h"
 #include <stdlib.h>
 
+
 int heuristic(Pos pos, Pos end) { //manhattan distance is admissible in this case
     return abs(pos.x - end.x) + abs(pos.y - end.y);
 }
@@ -43,17 +44,21 @@ Path astar(Graph closed_set, Pos start, Pos end) {
     child.f = child.g + child.h;
     child.from = 2;
     heap_push(&open_set, child);
+    #ifdef PATH_INFO
     result.nodes_discovered = 1;
     result.nodes_pushed = 1;
     result.nodes_expanded = 0;
     result.largest_heap = 1;
+    #endif
 
     while (open_set.size > 0) {
         parent = heap_pop(&open_set);
 
         if (cell(closed_set, parent.pos)) continue; //already checked
         set_cell(closed_set, parent.pos, parent.from);
+        #ifdef PATH_INFO
         result.nodes_expanded++;
+        #endif
 
         if (parent.pos.x == end.x && parent.pos.y == end.y) { //found the destination
             backtrace_path(&result, closed_set, parent.g, end);
@@ -62,6 +67,9 @@ Path astar(Graph closed_set, Pos start, Pos end) {
         }
 
         for (Cell i = 2; i < 6; i++) {
+            #ifdef PATH_INFO
+            result.nodes_discovered++;
+            #endif
             child.pos = parent.pos;
             switch (i) {
                 case 2: //right
@@ -90,11 +98,10 @@ Path astar(Graph closed_set, Pos start, Pos end) {
             child.from = i;
 
             heap_push(&open_set, child);
+            #ifdef PATH_INFO
             result.nodes_pushed++;
-            result.nodes_discovered++;
             result.largest_heap = max(result.largest_heap, open_set.size);
-
-
+            #endif
         }
     }
 
