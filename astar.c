@@ -41,16 +41,15 @@ Path astar(Graph graph, int width, int height, Coord start, Coord end) {
     unsigned char* closed_set = malloc(width * height * sizeof(unsigned char));
     memset(closed_set, 0, width * height * sizeof(unsigned char));
 
+    int h = abs(start.x - end.x) + abs(start.y - end.y);
     closed_set[start.x + width * start.y] = 1;
-    Node node = (Node) { start.x, start.y, 1, 0, 1 };
+    Node node = (Node) { start.x, start.y, 1, h, 1 + h };
     heap_push(&open_set, node);
     result.nodes_pushed = 1;
     result.largest_heap = 1;
 
     while (open_set.size > 0) {
         Node current = heap_pop(&open_set);
-
-
 
         Node node;
         for (unsigned char i = 1; i < 5; i++) {

@@ -14,6 +14,7 @@
 #include "graph_connect.h"
 #include "rng.h"
 #include "lookahead.h"
+#include "bmp.h"
 //#include "mincut.h"
 
 typedef Path (*PathfinderFunction)(Graph, int, int, Coord, Coord);
@@ -28,31 +29,24 @@ Graph generate_graph(FILE* debug, int width, int height, u64 seed, float noise_t
     graph[width * height - 1] = 0;
 
     if (DEBUG) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                fprintf(debug, "%d ", graph[y * width + x]);
-            }
-            fprintf(debug, "\n");
-        }
-        fprintf(debug, "\n");
+        write_bmp("before_connection.bmp", graph, width, height);
     }
 
     connect_graph(graph, width, height, rng);
+
+    if (DEBUG) {
+        write_bmp("graph.bmp", graph, width, height);
+    }
 
     return graph;
 }
 
 //profiling function written by chatgpt
-void profile_pathfinder(FILE* debug, FILE* output, char* image_output, PathfinderFunction f, Graph graph, int width, int height, Coord start, Coord end) {
+void profile_pathfinder(FILE* debug, FILE* output, FILE* image_output, PathfinderFunction f, Graph graph, int width, int height, Coord start, Coord end) {
     LARGE_INTEGER frequency;
     LARGE_INTEGER start_time;
     LARGE_INTEGER end_time;
     double interval;
-
-    int rowSize = (width * 3 + 3) & (~3); // 24-bit bitmap, padded to multiple of 4 bytes
-    int dataSize = rowSize * height;
-    int fileSize = sizeof(BMPHeader) + sizeof(BMPInfoHeader) + dataSize;
-    FILE* bmp = fopen(image_output, "wb");
 
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start_time); //start the timer
@@ -72,25 +66,13 @@ void profile_pathfinder(FILE* debug, FILE* output, char* image_output, Pathfinde
         Graph tempGrid = create_graph(width, height);
         memcpy(tempGrid, graph, width * height * sizeof(Cell));
 
-        // Replace path nodes in the temporary grid with a special marker -1
+        // Replace path nodes in the temporary grid with a special marker
         for (int i = 0; i < path.num_steps; i++) {
             Coord c = path.steps[i];
             tempGrid[c.y * width + c.x] = 255;
         }
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                // If the node is on the path, print an "X", otherwise print the node cost.
-                if (tempGrid[y * width + x] == 255) {
-                    fprintf(debug, "X ");
-                }
-                else {
-                    fprintf(debug, "%d ", tempGrid[y * width + x]);
-                }
-            }
-            fprintf(debug, "\n");
-        }
-        fprintf(debug, "\n");
+        write_bmp(image_output, tempGrid, width, height);
         free(tempGrid);
     }
     free_path(&path);

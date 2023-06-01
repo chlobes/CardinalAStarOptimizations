@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="astar.c" />
+    <ClCompile Include="bmp.c" />
     <ClCompile Include="graph.c" />
     <ClCompile Include="graph_connect.c" />
     <ClCompile Include="heap.c" />
@@ -138,6 +139,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="astar.h" />
+    <ClInclude Include="bmp.h" />
     <ClInclude Include="graph.h" />
     <ClInclude Include="graph_connect.h" />
     <ClInclude Include="heap.h" />
