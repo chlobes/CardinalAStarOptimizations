@@ -2,4 +2,4 @@
 #include "graph.h"
 #include "heap.h"
 
-Path lookahead(Graph graph, Pos start, Pos end);
+Path lookahead(Graph closed_set, Pos start, Pos end);

@@ -48,10 +48,13 @@ void profile_pathfinder(FILE* debug, FILE* output, FILE* image_output, Pathfinde
     LARGE_INTEGER end_time;
     double interval;
 
+    Graph closed_set = create_graph(graph.width, graph.height);
+    memcpy(closed_set.cells, graph.cells, closed_set.width * closed_set.height * sizeof(Cell));
+
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start_time); //start the timer
 
-    Path path = f(graph, start, end);
+    Path path = f(closed_set, start, end);
 
     QueryPerformanceCounter(&end_time); //stop the timer
     interval = (double)(end_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
@@ -61,20 +64,18 @@ void profile_pathfinder(FILE* debug, FILE* output, FILE* image_output, Pathfinde
     fprintf(output, "nodes pushed %d\n", path.nodes_pushed);
     fprintf(output, "largest heap %d\n", path.largest_heap);
 
-    if (DEBUG) {
-        // Create a temporary grid for printing.
-        Graph temp = create_graph(graph.width, graph.height);
-        memcpy(temp.cells, graph.cells, graph.width * graph.height * sizeof(Cell));
-
-        // Replace path nodes in the temporary grid with a special marker
-        for (int i = 0; i < path.num_steps; i++) {
-            Pos c = path.steps[i];
-            set_cell(temp, c, 255);
+    for (int i = 0; i < path.num_steps; i++) {
+        for (int dir = 0; dir < 4; dir++) { //give the path some width
+            int dx = (dir % 2) ? 0 : (dir - 1);
+            int dy = (dir % 2) ? (dir - 2) : 0;
+            Pos p = (Pos){ path.steps[i].x + dx, path.steps[i].y + dy };
+            if (p.x < 0 || p.y < 0 || p.x >= closed_set.width || p.y >= closed_set.height) continue;
+            set_cell(closed_set, p, 255);
         }
-
-        write_bmp(image_output, temp);
-        free_graph(temp);
     }
+
+    write_bmp(image_output, closed_set);
+    free_graph(closed_set);
     free_path(&path);
 }
 

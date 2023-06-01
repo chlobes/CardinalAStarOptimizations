@@ -27,14 +27,11 @@
 } while (0)
 
 //an optimization of A* that takes advantage of properties of the uniform grid
-Path lookahead(Graph graph, Pos start, Pos end) {
+Path lookahead(Graph closed_set, Pos start, Pos end) {
     Path result;
-    Graph closed_set = create_graph(graph.width, graph.height);
     Heap open_set = create_heap((closed_set.width * closed_set.height + 7) / 8);
     Node parent, child, next; //optimization 3: we can sometimes skip heap insertions using a next variable
     int next_found = 0;
-
-    memcpy(closed_set.cells, graph.cells, closed_set.width * closed_set.height * sizeof(Cell)); //optimization: merge closed_set with graph
 
     int h = abs(start.x - end.x) + abs(start.y - end.y);
     parent = (Node){ start.x, start.y, 1, h, h + 1, 1 };
@@ -66,7 +63,6 @@ Path lookahead(Graph graph, Pos start, Pos end) {
         if (parent.pos.x == end.x && parent.pos.y == end.y) { //found the destination
             backtrace_path(&result, closed_set, parent.g, end);
             free_heap(&open_set);
-            free_graph(closed_set);
             return result;
         }
 
@@ -78,12 +74,12 @@ Path lookahead(Graph graph, Pos start, Pos end) {
                 add_child(2);
             }
             if (parent.pos.y + 1 < closed_set.height) {
-                if (cell(graph, (Pos) { parent.pos.x - 1, parent.pos.y + 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y + 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(3);
                 }
             }
             if (parent.pos.y - 1 >= 0) {
-                //if (graph[parent.x - 1 + width * (parent.y - 1)]) { //optimization 2: if grandparent could've pathed to this node, skip it
+                //if (closed_set[parent.x - 1 + width * (parent.y - 1)]) { //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(5);
                 //}
             }
@@ -93,12 +89,12 @@ Path lookahead(Graph graph, Pos start, Pos end) {
                 add_child(3);
             }
             if (parent.pos.x + 1 < closed_set.width) {
-                //if (graph[parent.x + 1 + width * (parent.y - 1)]) { //optimization 2: if grandparent could've pathed to this node, skip it
+                //if (closed_set[parent.x + 1 + width * (parent.y - 1)]) { //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(2);
                 //}
             }
             if (parent.pos.x - 1 >= 0) {
-                if (cell(graph, (Pos) { parent.pos.x - 1, parent.pos.y - 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y - 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(4);
                 }
             }
@@ -109,12 +105,12 @@ Path lookahead(Graph graph, Pos start, Pos end) {
                 add_child(4);
             }
             if (parent.pos.y + 1 < closed_set.height) {
-                //if (graph[parent.x + 1 + width * (parent.y + 1)]) { //optimization 2: if grandparent could've pathed to this node, skip it
+                //if (closed_set[parent.x + 1 + width * (parent.y + 1)]) { //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(3);
                 //}
             }
             if (parent.pos.y - 1 >= 0) {
-                if (cell(graph, (Pos) { parent.pos.x + 1, parent.pos.y - 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y - 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(5);
                 }
             }
@@ -124,12 +120,12 @@ Path lookahead(Graph graph, Pos start, Pos end) {
                 add_child(5);
             }
             if (parent.pos.x - 1 >= 0) {
-                //if (graph[parent.x - 1 + width * (parent.y + 1)]) { //optimization 2: if grandparent could've pathed to this node, skip it
+                //if (closed_set[parent.x - 1 + width * (parent.y + 1)]) { //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(4);
                 //}
             }
             if (parent.pos.x + 1 < closed_set.width) {
-                if (cell(graph, (Pos) { parent.pos.x + 1, parent.pos.y + 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y + 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(2);
                 }
             }

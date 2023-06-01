@@ -30,13 +30,11 @@ void backtrace_path(Path* path, Graph closed_set, int num_steps, Pos end) {
 
 //regular old A* on a uniform grid, diagonals are not permitted
 //any cell that isn't a zero is treated as a wall
-Path astar(Graph graph, Pos start, Pos end) {
+//modifies the closed_set in the process of pathfinding so we can see how it works
+Path astar(Graph closed_set, Pos start, Pos end) {
     Path result;
-    Graph closed_set = create_graph(graph.width, graph.height);
     Heap open_set = create_heap((closed_set.width * closed_set.height + 7) / 8);
     Node child, parent;
-
-    memcpy(closed_set.cells, graph.cells, closed_set.width * closed_set.height * sizeof(Cell)); //optimization: merge closed_set with graph
 
     int h = abs(start.x - end.x) + abs(start.y - end.y);
     child.pos = start;
@@ -57,7 +55,6 @@ Path astar(Graph graph, Pos start, Pos end) {
         if (parent.pos.x == end.x && parent.pos.y == end.y) { //found the destination
             backtrace_path(&result, closed_set, parent.g, end);
             free_heap(&open_set);
-            free_graph(closed_set);
             return result;
         }
 

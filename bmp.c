@@ -61,13 +61,15 @@ void write_bmp(char* filename, Graph graph)
             int pixel = cell(graph, (Pos) { x, y });
             uint8_t red = 0, green = 0, blue = 0;
 
-            if (pixel == 0) {
+            if (pixel == 0) { //empty
                 red = 255, green = 255, blue = 255;
             }
-            else if (pixel == 1) {
-            } else if (pixel == 255) {
+            else if (pixel == 1) { //wall
+            } else if (pixel == 255) { //path
                 red = 255;
-            } else if (pixel == 2) {
+            } else if (pixel < 6) { //checked
+                blue = 255;
+            } else { //pruned
                 green = 255;
             }
 
