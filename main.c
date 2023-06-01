@@ -56,7 +56,9 @@ void profile_pathfinder(FILE* output, FILE* image_output, PathfinderFunction f, 
 
     fprintf(output, "time %fs\n", interval);
     fprintf(output, "path length %d\n", path.num_steps);
+    fprintf(output, "nodes discovered %d\n", path.nodes_discovered);
     fprintf(output, "nodes pushed %d\n", path.nodes_pushed);
+    fprintf(output, "nodes expanded %d\n", path.nodes_expanded);
     fprintf(output, "largest heap %d\n", path.largest_heap);
 
     for (int i = 0; i < path.num_steps; i++) {

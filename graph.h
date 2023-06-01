@@ -20,7 +20,9 @@ void free_graph(Graph graph);
 typedef struct path {
     Pos* steps;
     int num_steps;
+    int nodes_discovered; //how many nodes we bothered to look at, this is the same as nodes_pushed for A*, but lower for lookahead
     int nodes_pushed; //how many times we pushed onto the heap
+    int nodes_expanded; //how many nodes we actually added to the closed set
     int largest_heap; //the largest that the heap got, we expect this will be close to nodes_pushed but want to confirm
 } Path;
 

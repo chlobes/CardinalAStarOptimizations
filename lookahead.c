@@ -5,6 +5,7 @@
 #include "graph.h"
 #include <stdlib.h>
 
+//using a macro because passing in 20 arguments to a function is too verbose and hard to read
 #define add_child(dir) do {\
     int dx = (dir % 2) ? 0 : (dir - 3) * -1;\
     int dy = (dir % 2) ? (dir - 4) * -1 : 0;\
@@ -15,13 +16,14 @@
     child.h = heuristic(child.pos, end);\
     child.f = child.g + child.h;\
     child.from = dir;\
+    result.nodes_discovered++;\
     if (!next_found && child.h < parent.h) {\
         next = child;\
         next_found = 1;\
     }\
     else {\
         heap_push(&open_set, child);\
-        result.nodes_pushed += 1;\
+        result.nodes_pushed++;\
         result.largest_heap = max(result.largest_heap, open_set.size);\
     }\
 } while (0)
@@ -36,8 +38,11 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
     int h = abs(start.x - end.x) + abs(start.y - end.y);
     parent = (Node){ start.x, start.y, 1, h, h + 1, 1 };
     set_cell(closed_set, start, 1);
+    result.nodes_discovered = 1;
     result.nodes_pushed = 0;
+    result.nodes_expanded = 1;
     result.largest_heap = 0;
+    
 
     //we need to manually expand the first node if we want to optimize bounds checks in the main loop
     for (unsigned char dir = 2; dir < 6; dir++) {
@@ -59,6 +64,7 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
             continue;
         }
         set_cell(closed_set, parent.pos, parent.from);
+        result.nodes_expanded++;
 
         if (parent.pos.x == end.x && parent.pos.y == end.y) { //found the destination
             backtrace_path(&result, closed_set, parent.g, end);

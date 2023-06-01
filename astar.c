@@ -43,7 +43,9 @@ Path astar(Graph closed_set, Pos start, Pos end) {
     child.f = child.g + child.h;
     child.from = 2;
     heap_push(&open_set, child);
+    result.nodes_discovered = 1;
     result.nodes_pushed = 1;
+    result.nodes_expanded = 0;
     result.largest_heap = 1;
 
     while (open_set.size > 0) {
@@ -51,6 +53,7 @@ Path astar(Graph closed_set, Pos start, Pos end) {
 
         if (cell(closed_set, parent.pos)) continue; //already checked
         set_cell(closed_set, parent.pos, parent.from);
+        result.nodes_expanded++;
 
         if (parent.pos.x == end.x && parent.pos.y == end.y) { //found the destination
             backtrace_path(&result, closed_set, parent.g, end);
@@ -87,7 +90,8 @@ Path astar(Graph closed_set, Pos start, Pos end) {
             child.from = i;
 
             heap_push(&open_set, child);
-            result.nodes_pushed += 1;
+            result.nodes_pushed++;
+            result.nodes_discovered++;
             result.largest_heap = max(result.largest_heap, open_set.size);
 
 
