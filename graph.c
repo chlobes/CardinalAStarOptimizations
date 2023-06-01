@@ -6,7 +6,7 @@ Graph create_graph(int width, int height) {
     Graph r;
     r.width = width;
     r.height = height;
-    r.cells = calloc(width * height, sizeof(Cell));
+    r.cells = malloc(width * height, sizeof(Cell));
     return r;
 }
 

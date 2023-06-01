@@ -13,25 +13,16 @@ void backtrace_path(Path* path, Graph closed_set, int num_steps, Pos end) {
     path->steps = (Pos*)malloc(num_steps * sizeof(Pos));
     path->num_steps = num_steps;
 
-    Pos current = end;
+    Pos p = end;
     for (int step = num_steps - 1; step >= 0; step--) {
-        path->steps[step] = current;
+        path->steps[step] = p;
         
         //reverse the step that was done previously
-        switch (cell(closed_set, current)) {
-            case 1: //right
-                current.x -= 1;
-                break;
-            case 2: // down
-                current.y -= 1;
-                break;
-            case 3: // left
-                current.x += 1;
-                break;
-            case 4: // up
-                current.y += 1;
-                break;
-        }
+        Cell dir = cell(closed_set, p);
+        int dx = (dir % 2) ? 0 : (dir - 3) * -1;
+        int dy = (dir % 2) ? (dir - 4) * -1 : 0;
+        p.x -= dx;
+        p.y -= dy;
     }
 }
 
@@ -41,64 +32,64 @@ void backtrace_path(Path* path, Graph closed_set, int num_steps, Pos end) {
 //any cell that isn't a zero is treated as a wall
 Path astar(Graph graph, Pos start, Pos end) {
     Path result;
-    Heap open_set = create_heap((graph.width * graph.height + 7) / 8);
-    
     Graph closed_set = create_graph(graph.width, graph.height);
+    Heap open_set = create_heap((closed_set.width * closed_set.height + 7) / 8);
+    Node child, parent;
+
+    memcpy(closed_set.cells, graph.cells, closed_set.width * closed_set.height * sizeof(Cell)); //optimization: merge closed_set with graph
 
     int h = abs(start.x - end.x) + abs(start.y - end.y);
-    Node node;
-    node.pos = start;
-    node.g = 1;
-    node.h = heuristic(start, end);
-    node.f = node.g + node.h;
-    node.from = 1;
-    heap_push(&open_set, node);
+    child.pos = start;
+    child.g = 1;
+    child.h = heuristic(start, end);
+    child.f = child.g + child.h;
+    child.from = 2;
+    heap_push(&open_set, child);
     result.nodes_pushed = 1;
     result.largest_heap = 1;
 
     while (open_set.size > 0) {
-        Node current = heap_pop(&open_set);
+        parent = heap_pop(&open_set);
 
-        if (cell(closed_set, current.pos)) continue; //already checked
-        set_cell(closed_set, current.pos, current.from);
+        if (cell(closed_set, parent.pos)) continue; //already checked
+        set_cell(closed_set, parent.pos, parent.from);
 
-        if (current.pos.x == end.x && current.pos.y == end.y) { //found the destination
-            backtrace_path(&result, closed_set, current.g, end);
+        if (parent.pos.x == end.x && parent.pos.y == end.y) { //found the destination
+            backtrace_path(&result, closed_set, parent.g, end);
             free_heap(&open_set);
             free_graph(closed_set);
             return result;
         }
 
-        Node node;
-        for (Cell i = 1; i < 5; i++) {
-            node.pos = current.pos;
+        for (Cell i = 2; i < 6; i++) {
+            child.pos = parent.pos;
             switch (i) {
-                case 1: //right
-                    if (node.pos.x + 1 >= graph.width) continue;
-                    node.pos.x += 1;
+                case 2: //right
+                    if (child.pos.x + 1 >= closed_set.width) continue;
+                    child.pos.x += 1;
                     break;
-                case 2: // down
-                    if (node.pos.y + 1 >= graph.height) continue;
-                    node.pos.y += 1;
+                case 3: // down
+                    if (child.pos.y + 1 >= closed_set.height) continue;
+                    child.pos.y += 1;
                     break;
-                case 3: // left
-                    if (node.pos.x - 1 < 0) continue;
-                    node.pos.x -= 1;
+                case 4: // left
+                    if (child.pos.x - 1 < 0) continue;
+                    child.pos.x -= 1;
                     break;
-                case 4: // up
-                    if (node.pos.y - 1 < 0) continue;
-                    node.pos.y -= 1;
+                case 5: // up
+                    if (child.pos.y - 1 < 0) continue;
+                    child.pos.y -= 1;
                     break;
             }
 
-            if (cell(graph, node.pos) || cell(closed_set, node.pos)) continue; //wall or already checked
+            if (cell(closed_set, child.pos)) continue; //wall or already checked
 
-            node.g = current.g + 1; //uniform cost of 1
-            node.h = heuristic(node.pos, end);
-            node.f = node.g + node.h;
-            node.from = i;
+            child.g = parent.g + 1; //uniform cost of 1
+            child.h = heuristic(child.pos, end);
+            child.f = child.g + child.h;
+            child.from = i;
 
-            heap_push(&open_set, node);
+            heap_push(&open_set, child);
             result.nodes_pushed += 1;
             result.largest_heap = max(result.largest_heap, open_set.size);
 
