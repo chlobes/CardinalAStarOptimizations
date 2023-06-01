@@ -367,3 +367,4 @@ debug.txt
 *.bmp
 /lookahead.bmp
 /graph.bmp
+/astar.bmp
