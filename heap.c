@@ -1,5 +1,6 @@
 #pragma once
 #include "heap.h"
+#include "graph.h"
 #include <stdlib.h>
 
 Heap create_heap(int capacity) {

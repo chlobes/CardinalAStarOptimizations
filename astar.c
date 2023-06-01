@@ -46,8 +46,12 @@ Path astar(Graph graph, Pos start, Pos end) {
     Graph closed_set = create_graph(graph.width, graph.height);
 
     int h = abs(start.x - end.x) + abs(start.y - end.y);
-    set_cell(closed_set, start, 1);
-    Node node = (Node) { start.x, start.y, 1, h, 1 + h };
+    Node node;
+    node.pos = start;
+    node.g = 1;
+    node.h = heuristic(start, end);
+    node.f = node.g + node.h;
+    node.from = 1;
     heap_push(&open_set, node);
     result.nodes_pushed = 1;
     result.largest_heap = 1;
@@ -55,8 +59,18 @@ Path astar(Graph graph, Pos start, Pos end) {
     while (open_set.size > 0) {
         Node current = heap_pop(&open_set);
 
+        if (cell(closed_set, current.pos)) continue; //already checked
+        set_cell(closed_set, current.pos, current.from);
+
+        if (current.pos.x == end.x && current.pos.y == end.y) { //found the destination
+            backtrace_path(&result, closed_set, current.g, end);
+            free_heap(&open_set);
+            free_graph(closed_set);
+            return result;
+        }
+
         Node node;
-        for (unsigned char i = 1; i < 5; i++) {
+        for (Cell i = 1; i < 5; i++) {
             node.pos = current.pos;
             switch (i) {
                 case 1: //right
@@ -82,18 +96,13 @@ Path astar(Graph graph, Pos start, Pos end) {
             node.g = current.g + 1; //uniform cost of 1
             node.h = heuristic(node.pos, end);
             node.f = node.g + node.h;
+            node.from = i;
 
-            set_cell(closed_set, node.pos, i);
             heap_push(&open_set, node);
             result.nodes_pushed += 1;
             result.largest_heap = max(result.largest_heap, open_set.size);
 
-            if (node.pos.x == end.x && node.pos.y == end.y) { //found the destination
-                backtrace_path(&result, closed_set, node.g, end);
-                free_heap(&open_set);
-                free_graph(closed_set);
-                return result;
-            }
+
         }
     }
 

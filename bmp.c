@@ -40,7 +40,7 @@ void write_bmp(char* filename, Graph graph)
     FILE* file = fopen(filename, "wb");
     if (file == NULL)
     {
-        printf("Failed to open file for writing.\n");
+        printf("Failed to open file for writing %s\n", filename);
         return;
     }
 

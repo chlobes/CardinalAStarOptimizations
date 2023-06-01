@@ -10,6 +10,7 @@ typedef struct node {
     int g;
     int h;
     int f;
+    Cell from;
 } Node;
 
 typedef struct heap {

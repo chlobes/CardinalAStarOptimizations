@@ -38,7 +38,7 @@ Path lookahead(Graph graph, Pos start, Pos end) {
     Graph closed_set = create_graph(graph.width, graph.height);
 
     int h = abs(start.x - end.x) + abs(start.y - end.y);
-    current = (Node){ start.x, start.y, 1, h, h + 1 };
+    current = (Node){ start.x, start.y, 1, h, h + 1, 1 };
     set_cell(closed_set, start, 1);
     result.nodes_pushed = 0;
     result.largest_heap = 0;
