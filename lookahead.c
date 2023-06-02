@@ -29,9 +29,12 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
     Node parent, child, next; //optimization 3: we can sometimes skip heap insertions using a next variable
     int next_found = 0;
 
-    int h = abs(start.x - end.x) + abs(start.y - end.y);
-    parent = (Node){ start.x, start.y, 1, h, h + 1, 1 };
-    set_cell(closed_set, start, 1);
+    parent.pos = start;
+    parent.g = 1;
+    parent.h = heuristic(start, end);
+    parent.f = parent.g + parent.h;
+    parent.from = RIGHT;
+    set_cell(closed_set, start, parent.from);
     #ifdef PATH_INFO
     result.nodes_discovered = 5;
     result.nodes_pushed = 0;
@@ -40,7 +43,7 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
     #endif
 
     //we need to manually expand the first node if we want to optimize bounds checks in the main loop
-    for (unsigned char dir = 2; dir < 6; dir++) {
+    for (Cell dir = 2; dir < 6; dir++) {
         child.pos = offset(parent.pos, dir);
         
         if (child.pos.x < 0 || child.pos.y < 0 || child.pos.x >= closed_set.width || child.pos.y >= closed_set.height) continue; //out of bounds

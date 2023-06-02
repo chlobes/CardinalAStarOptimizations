@@ -54,12 +54,12 @@ Path astar(Graph closed_set, Pos start, Pos end) {
     Heap open_set = create_heap(1);
     Node child, parent;
 
-    child.pos = start;
-    child.g = 1;
-    child.h = heuristic(start, end);
-    child.f = child.g + child.h;
-    child.from = 2;
-    heap_push(&open_set, child);
+    parent.pos = start;
+    parent.g = 1;
+    parent.h = heuristic(start, end);
+    parent.f = parent.g + parent.h;
+    parent.from = RIGHT;
+    heap_push(&open_set, parent);
     #ifdef PATH_INFO
     result.nodes_discovered = 1;
     result.nodes_pushed = 1;
