@@ -4,13 +4,11 @@
 #include "heap.h"
 #include "graph.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 //using a macro because passing in 20 arguments to a function is too verbose and hard to read
 #define add_child(dir) do {\
-    int dx = (dir % 2) ? 0 : (dir - 3) * -1;\
-    int dy = (dir % 2) ? (dir - 4) * -1 : 0;\
-    child.pos.x = parent.pos.x + dx;\
-    child.pos.y = parent.pos.y + dy;\
+    child.pos = offset(parent.pos, dir);\
     if (cell(closed_set, child.pos)) break;\
     child.g = parent.g + 1;\
     child.h = heuristic(child.pos, end);\
@@ -27,7 +25,7 @@
 //an optimization of A* that takes advantage of properties of the uniform grid
 Path lookahead(Graph closed_set, Pos start, Pos end) {
     Path result;
-    Heap open_set = create_heap((closed_set.width * closed_set.height + 7) / 8);
+    Heap open_set = create_heap(1);
     Node parent, child, next; //optimization 3: we can sometimes skip heap insertions using a next variable
     int next_found = 0;
 
@@ -43,11 +41,9 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
 
     //we need to manually expand the first node if we want to optimize bounds checks in the main loop
     for (unsigned char dir = 2; dir < 6; dir++) {
-        int dx = (dir % 2) ? 0 : (dir - 3) * -1;
-        int dy = (dir % 2) ? (dir - 4) * -1 : 0;
+        child.pos = offset(parent.pos, dir);
         
-        if (parent.pos.x + dx < 0 || parent.pos.y + dy < 0 || parent.pos.x + dx >= closed_set.width
-            || parent.pos.y + dy >= closed_set.height) continue; //out of bounds
+        if (child.pos.x < 0 || child.pos.y < 0 || child.pos.x >= closed_set.width || child.pos.y >= closed_set.height) continue; //out of bounds
         add_child(dir);
     }
 
@@ -76,76 +72,67 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
         result.nodes_discovered += 3;
         int before_size = open_set.size;
         #endif
-        switch (parent.from) { //optimization 1: check where we moved from so we don't check the parent
-        case 2: //right
-            if (parent.pos.x + 1 < closed_set.width) {
-                add_child(2);
-            }
-            if (parent.pos.y + 1 < closed_set.height) {
-                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y + 1 })) {
-                    //optimization 2: if grandparent could've pathed to this node, skip it
-                    add_child(3);
+        switch (parent.from) {
+            case RIGHT:
+                if (parent.pos.x + 1 < closed_set.width) {
+                    add_child(RIGHT);
                 }
-            }
-            if (parent.pos.y - 1 >= 0) {
-                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y - 1 })) {
-                    //optimization 2: if grandparent could've pathed to this node, skip it
-                    add_child(5);
+                if (parent.pos.y + 1 < closed_set.height) {
+                    if (cell(closed_set, offset(parent.pos, DOWNLEFT))) { //optimization 2: if grandparent could've pathed to this node, skip it
+                        add_child(DOWN);
+                    }
                 }
-            }
-            break;
-        case 3: //down
-            if (parent.pos.y + 1 < closed_set.height) {
-                add_child(3);
-            }
-            if (parent.pos.x + 1 < closed_set.width) {
-                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y - 1 })) {
-                    //optimization 2: if grandparent could've pathed to this node, skip it
-                    add_child(2);
+                if (parent.pos.y - 1 >= 0) {
+                    if (cell(closed_set, offset(parent.pos, UPLEFT))) { //optimization 2: if grandparent could've pathed to this node, skip it
+                        add_child(UP);
+                    }
                 }
-            }
-            if (parent.pos.x - 1 >= 0) {
-                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y - 1 })) {
-                    //optimization 2: if grandparent could've pathed to this node, skip it
-                    add_child(4);
+                break;
+            case DOWN:
+                if (parent.pos.y + 1 < closed_set.height) {
+                    add_child(DOWN);
                 }
-            }
-            
-            break;
-        case 4: //left
-            if (parent.pos.x - 1 >= 0) {
-                add_child(4);
-            }
-            if (parent.pos.y + 1 < closed_set.height) {
-                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y + 1 })) {
-                    //optimization 2: if grandparent could've pathed to this node, skip it
-                    add_child(3);
+                if (parent.pos.x + 1 < closed_set.width) {
+                    if (cell(closed_set, offset(parent.pos, UPRIGHT))) { //optimization 2: if grandparent could've pathed to this node, skip it
+                        add_child(RIGHT);
+                    }
                 }
-            }
-            if (parent.pos.y - 1 >= 0) {
-                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y - 1 })) {
-                    //optimization 2: if grandparent could've pathed to this node, skip it
-                    add_child(5);
+                if (parent.pos.x - 1 >= 0) {
+                    if (cell(closed_set, offset(parent.pos, UPLEFT))) { //optimization 2: if grandparent could've pathed to this node, skip it
+                        add_child(LEFT);
+                    }
                 }
-            }
-            break;
-        case 5: //up
-            if (parent.pos.y - 1 >= 0) {
-                add_child(5);
-            }
-            if (parent.pos.x - 1 >= 0) {
-                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y + 1 })) {
-                    //optimization 2: if grandparent could've pathed to this node, skip it
-                    add_child(4);
+                break;
+            case LEFT:
+                if (parent.pos.x - 1 >= 0) {
+                    add_child(LEFT);
                 }
-            }
-            if (parent.pos.x + 1 < closed_set.width) {
-                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y + 1 })) {
-                    //optimization 2: if grandparent could've pathed to this node, skip it
-                    add_child(2);
+                if (parent.pos.y + 1 < closed_set.height) {
+                    if (cell(closed_set, offset(parent.pos, DOWNRIGHT))) { //optimization 2: if grandparent could've pathed to this node, skip it
+                        add_child(DOWN);
+                    }
                 }
-            }
-            break;
+                if (parent.pos.y - 1 >= 0) {
+                    if (cell(closed_set, offset(parent.pos, UPRIGHT))) { //optimization 2: if grandparent could've pathed to this node, skip it
+                        add_child(UP);
+                    }
+                }
+                break;
+            case UP:
+                if (parent.pos.y - 1 >= 0) {
+                    add_child(UP);
+                }
+                if (parent.pos.x - 1 >= 0) {
+                    if (cell(closed_set, offset(parent.pos, DOWNLEFT))) { //optimization 2: if grandparent could've pathed to this node, skip it
+                        add_child(LEFT);
+                    }
+                }
+                if (parent.pos.x + 1 < closed_set.width) {
+                    if (cell(closed_set, offset(parent.pos, DOWNRIGHT))) { //optimization 2: if grandparent could've pathed to this node, skip it
+                        add_child(RIGHT);
+                    }
+                }
+                break;
         }
         #ifdef PATH_INFO
         result.largest_heap = max(result.largest_heap, open_set.size);

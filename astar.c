@@ -4,7 +4,21 @@
 #include "graph.h"
 #include "stdio.h"
 #include <stdlib.h>
+#include <stdio.h>
 
+Pos offset(Pos p, Cell d) {
+    switch (d) {
+        case RIGHT: p.x += 1; break;
+        case DOWN: p.y += 1; break;
+        case LEFT: p.x -= 1; break;
+        case UP: p.y -= 1; break;
+        case DOWNRIGHT: p.x += 1, p.y += 1; break;
+        case DOWNLEFT: p.x -= 1, p.y += 1; break;
+        case UPRIGHT: p.x += 1, p.y -= 1; break;
+        case UPLEFT: p.x -= 1, p.y -= 1; break;
+    }
+    return p;
+}
 
 int heuristic(Pos pos, Pos end) { //manhattan distance is admissible in this case
     return abs(pos.x - end.x) + abs(pos.y - end.y);
@@ -20,10 +34,13 @@ void backtrace_path(Path* path, Graph closed_set, int num_steps, Pos end) {
         
         //reverse the step that was done previously
         Cell dir = cell(closed_set, p);
-        int dx = (dir % 2) ? 0 : (dir - 3) * -1;
-        int dy = (dir % 2) ? (dir - 4) * -1 : 0;
-        p.x -= dx;
-        p.y -= dy;
+        switch (dir) {
+            case RIGHT: dir = LEFT; break;
+            case DOWN: dir = UP; break;
+            case LEFT: dir = RIGHT; break;
+            case UP: dir = DOWN; break;
+        }
+        p = offset(p, dir);
     }
 }
 
@@ -34,10 +51,9 @@ void backtrace_path(Path* path, Graph closed_set, int num_steps, Pos end) {
 //modifies the closed_set in the process of pathfinding so we can see how it works
 Path astar(Graph closed_set, Pos start, Pos end) {
     Path result;
-    Heap open_set = create_heap((closed_set.width * closed_set.height + 7) / 8);
+    Heap open_set = create_heap(1);
     Node child, parent;
 
-    int h = abs(start.x - end.x) + abs(start.y - end.y);
     child.pos = start;
     child.g = 1;
     child.h = heuristic(start, end);
@@ -66,36 +82,20 @@ Path astar(Graph closed_set, Pos start, Pos end) {
             return result;
         }
 
-        for (Cell i = 2; i < 6; i++) {
+        for (Cell dir = 2; dir < 6; dir++) {
             #ifdef PATH_INFO
             result.nodes_discovered++;
             #endif
-            child.pos = parent.pos;
-            switch (i) {
-                case 2: //right
-                    if (child.pos.x + 1 >= closed_set.width) continue;
-                    child.pos.x += 1;
-                    break;
-                case 3: // down
-                    if (child.pos.y + 1 >= closed_set.height) continue;
-                    child.pos.y += 1;
-                    break;
-                case 4: // left
-                    if (child.pos.x - 1 < 0) continue;
-                    child.pos.x -= 1;
-                    break;
-                case 5: // up
-                    if (child.pos.y - 1 < 0) continue;
-                    child.pos.y -= 1;
-                    break;
-            }
+            child.pos = offset(parent.pos, dir);
+
+            if (child.pos.x < 0 || child.pos.y < 0 || child.pos.x >= closed_set.width || child.pos.y >= closed_set.height) continue; //out of bounds
 
             if (cell(closed_set, child.pos)) continue; //wall or already checked
 
             child.g = parent.g + 1; //uniform cost of 1
             child.h = heuristic(child.pos, end);
             child.f = child.g + child.h;
-            child.from = i;
+            child.from = dir;
 
             heap_push(&open_set, child);
             #ifdef PATH_INFO

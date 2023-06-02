@@ -11,6 +11,7 @@ Heap create_heap(int capacity) {
     return heap;
 }
 
+
 void heap_push(Heap* heap, Node node) {
     if (heap->size == heap->capacity) {
         // Heap is full, we need to increase its capacity

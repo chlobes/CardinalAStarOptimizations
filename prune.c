@@ -61,5 +61,8 @@ int prune_graph(Graph graph) {
 		while (stack_size2) prune_cell(graph, stack1, &stack_size1, stack2[--stack_size2], generation);
 	}
 
+	free(stack1);
+	free(stack2);
+
 	return generation - 6;
 }
