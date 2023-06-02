@@ -30,14 +30,14 @@ typedef struct algoStats {
 } AlgoStats;
 
 void print_stats(AlgoStats stats, FILE* output) {
-    fprintf(output, "time %fs\n", stats.runtime / stats.runs);
+    fprintf(output, "Runtime: %.3fs\n", stats.runtime / stats.runs);
     #ifdef PATH_INFO
-    fprintf(output, "nodes discovered %d\n", stats.nodes_discovered / stats.runs);
-    fprintf(output, "nodes pushed %d\n", stats.nodes_pushed / stats.runs);
-    fprintf(output, "nodes expanded %d\n", stats.nodes_expanded / stats.runs);
-    fprintf(output, "largest heap %d\n", stats.largest_heap / stats.runs);
+    fprintf(output, "Discovered: %d\n", stats.nodes_discovered / stats.runs);
+    fprintf(output, "Pushed: %d\n", stats.nodes_pushed / stats.runs);
+    fprintf(output, "Expanded: %d\n", stats.nodes_expanded / stats.runs);
+    fprintf(output, "Max Heap: %d\n", stats.largest_heap / stats.runs);
     #endif
-    fprintf(output, "path length %d\n", stats.path_length / stats.runs);
+    //fprintf(output, "path length %.1f\n", (double)stats.path_length / stats.runs);
 }
 
 typedef Path (*PathfinderFunction)(Graph, Pos, Pos);
@@ -126,7 +126,6 @@ void compare_algos(int width, int height, u64 seed, float noise_thresh, float no
     QueryPerformanceCounter(&start_time); //start the timer
 
     prune_generations = prune_graph(graph);
-    printf("%d\n", prune_generations);
 
     QueryPerformanceCounter(&end_time); //stop the timer
     interval = (double)(end_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
