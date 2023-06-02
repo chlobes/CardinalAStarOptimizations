@@ -33,7 +33,7 @@ void prune_cell(Graph graph, Pos* stack, int* stack_size, Pos p, Cell generation
 	if (lut[byte]) {
 		set_cell(graph, p, generation);
 
-		for (int i = 0; i < 8; ++i) {
+		for (int i = 0; i < 4; ++i) {
 			if (neighbours[i].x < 0 || neighbours[i].y < 0 || neighbours[i].x >= graph.width || neighbours[i].y >= graph.height) continue;
 			if (!cell(graph, neighbours[i])) stack[(*stack_size)++] = neighbours[i];
 		}
