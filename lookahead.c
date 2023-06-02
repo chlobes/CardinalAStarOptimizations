@@ -82,12 +82,14 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
                 add_child(2);
             }
             if (parent.pos.y + 1 < closed_set.height) {
-                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y + 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y + 1 })) {
+                    //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(3);
                 }
             }
             if (parent.pos.y - 1 >= 0) {
-                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y - 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y - 1 })) {
+                    //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(5);
                 }
             }
@@ -97,12 +99,14 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
                 add_child(3);
             }
             if (parent.pos.x + 1 < closed_set.width) {
-                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y - 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y - 1 })) {
+                    //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(2);
                 }
             }
             if (parent.pos.x - 1 >= 0) {
-                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y - 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y - 1 })) {
+                    //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(4);
                 }
             }
@@ -113,12 +117,14 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
                 add_child(4);
             }
             if (parent.pos.y + 1 < closed_set.height) {
-                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y + 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y + 1 })) {
+                    //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(3);
                 }
             }
             if (parent.pos.y - 1 >= 0) {
-                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y - 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y - 1 })) {
+                    //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(5);
                 }
             }
@@ -128,12 +134,14 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
                 add_child(5);
             }
             if (parent.pos.x - 1 >= 0) {
-                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y + 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x - 1, parent.pos.y + 1 })) {
+                    //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(4);
                 }
             }
             if (parent.pos.x + 1 < closed_set.width) {
-                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y + 1 })) { //optimization 2: if grandparent could've pathed to this node, skip it
+                if (cell(closed_set, (Pos) { parent.pos.x + 1, parent.pos.y + 1 })) {
+                    //optimization 2: if grandparent could've pathed to this node, skip it
                     add_child(2);
                 }
             }
