@@ -135,6 +135,7 @@
     <ClCompile Include="lookahead.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="noise.c" />
+    <ClCompile Include="prune.c" />
     <ClCompile Include="rng.c" />
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +146,7 @@
     <ClInclude Include="heap.h" />
     <ClInclude Include="lookahead.h" />
     <ClInclude Include="noise.h" />
+    <ClInclude Include="prune.h" />
     <ClInclude Include="rng.h" />
   </ItemGroup>
   <ItemGroup>

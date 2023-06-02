@@ -14,6 +14,7 @@
 #include "rng.h"
 #include "lookahead.h"
 #include "bmp.h"
+#include "prune.h"
 //#include "mincut.h"
 
 typedef Path (*PathfinderFunction)(Graph, Pos, Pos);
@@ -27,17 +28,17 @@ Graph generate_graph(int width, int height, u64 seed, float noise_thresh, float 
     set_cell(graph, (Pos) { 0, 0 }, 0);
     set_cell(graph, (Pos) { width - 1, height - 1 }, 0);
 
-    write_bmp("before_connection.bmp", graph);
+    write_bmp("before_connection.bmp", graph, 0);
 
-    connect_graph(graph, rng);
+    connect_graph(graph);
 
-    write_bmp("graph.bmp", graph);
+    write_bmp("graph.bmp", graph, 0);
 
     return graph;
 }
 
 //profiling function written by chatgpt
-void profile_pathfinder(FILE* output, FILE* image_output, PathfinderFunction f, Graph graph, Pos start, Pos end) {
+void profile_pathfinder(FILE* output, char* image_output, PathfinderFunction f, Graph graph, Cell prune_generations, Pos start, Pos end) {
     LARGE_INTEGER frequency;
     LARGE_INTEGER start_time;
     LARGE_INTEGER end_time;
@@ -73,7 +74,7 @@ void profile_pathfinder(FILE* output, FILE* image_output, PathfinderFunction f, 
         }
     }
 
-    write_bmp(image_output, closed_set);
+    write_bmp(image_output, closed_set, prune_generations);
     free_graph(closed_set);
     free_path(&path);
 }
@@ -82,6 +83,7 @@ int main() {
     int width, height;
     u64 seed;
     float noise_thresh, noise_scale;
+    int prune_generations = 0;
     FILE* output = fopen("output.txt", "w");
 
     if (USER_INPUT) {
@@ -90,27 +92,53 @@ int main() {
         printf("enter grid height: ");
         scanf("%d", &height);
         printf("enter rng seed: ");
-        scanf("%lu", &seed);
+        scanf("%llu", &seed);
         printf("enter noise threshold (-1 to 1): ");
         scanf("%f", &noise_thresh);
         printf("enter noise scale: ");
         scanf("%f", &noise_scale);
     } else {
-        width = 2000;
-        height = 2000;
+        width = 16000;
+        height = 16000;
         seed = 3;
         noise_thresh = -0.15f;
         noise_scale = 0.1f;
     }
+    width += width % 2; //for some reason, malloc crashes when width/height are odd, don't ask me why
+    height += height % 2;
 
     Graph graph = generate_graph(width, height, seed, noise_thresh, noise_scale);
 
     fprintf(output, "astar:\n");
-    profile_pathfinder(output, "astar.bmp", astar, graph, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
+    profile_pathfinder(output, "astar.bmp", astar, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
     fprintf(output, "\nlookahead:\n");
-    profile_pathfinder(output, "lookahead.bmp", lookahead, graph, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
+    profile_pathfinder(output, "lookahead.bmp", lookahead, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
 
-    //TODO: cellular automata comparison
+    //TODO: we could clean up this duplicated code with some macros
+    LARGE_INTEGER frequency;
+    LARGE_INTEGER start_time;
+    LARGE_INTEGER end_time;
+    double interval;
+
+    Graph closed_set = create_graph(graph.width, graph.height);
+    memcpy(closed_set.cells, graph.cells, closed_set.width* closed_set.height * sizeof(Cell));
+
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&start_time); //start the timer
+
+    prune_generations = prune_graph(graph);
+
+    QueryPerformanceCounter(&end_time); //stop the timer
+    interval = (double)(end_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
+
+    fprintf(output, "\npruned %d generations in %fs\n", prune_generations, interval);
+
+    write_bmp("pruned.bmp", graph, prune_generations);
+
+    fprintf(output, "\npruned astar:\n");
+    profile_pathfinder(output, "pruned_astar.bmp", astar, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
+    fprintf(output, "\npruned lookahead:\n");
+    profile_pathfinder(output, "pruned_lookahead.bmp", lookahead, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
 
     fclose(output);
     free_graph(graph);

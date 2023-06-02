@@ -42,6 +42,9 @@
     <ClCompile Include="bmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="prune.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="graph.h">
@@ -66,6 +69,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="bmp.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="prune.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

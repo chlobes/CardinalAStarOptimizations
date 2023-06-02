@@ -1,100 +1,96 @@
 #pragma once
 #include "graph_connect.h"
 #include "graph.h"
-#include "rng.h"
+#include "bmp.h"
+#include <stdlib.h>
 
-//search for a random point of desired type, return -1 if we can't find one
-Pos find(Graph graph, Cell target, int start_x, int start_y) {
-    int x = start_x;
-    int y = start_y;
+//floods zeroes with twos
+void flood_empty(Graph graph, Pos* stack, Pos p) {
+    int stack_size = 0;
 
-    while (cell(graph, (Pos) { x, y }) != target) {
-        x += 1;
-        if (x >= graph.width) {
-            x = 0;
-            y += 1;
-            y %= graph.height;
-        }
-        if (x == start_x && y == start_y) {
-            return (Pos) { -1, -1 }; //no targets left in the graph
-        }
-    }
-    return (Pos) { x, y }; //found one
-}
+    set_cell(graph, p, 2);
+    stack[stack_size++] = p;
 
-//starts at a point and fills all zeroes with twos to mark a region
-void flood(Graph graph, int x, int y) {
-    if (x < 0 || y < 0 || x >= graph.width || y >= graph.height) { //don't go off the edge of the graph
-        return;
-    }
-
-    if (cell(graph, (Pos){ x, y })) { //if it's a wall or already filled, skip
-        return;
-    }
-
-    set_cell(graph, (Pos) { x, y }, 2);
-    flood(graph, x + 1, y);
-    flood(graph, x - 1, y);
-    flood(graph, x, y + 1);
-    flood(graph, x, y - 1);
-}
-
-//checks if all empty nodes of the graph are connected and randomly adds connections until they are
-void connect_graph(Graph graph, u64* rng) {
-    Pos prev;
-    Pos next = find(graph, 0, 0, 0);
-
-    while (1) {
-        flood(graph, next.x, next.y);
-        prev = next;
-        next = find(graph, 0, (prev.x + graph.width / 2) % graph.width, (prev.y + graph.height / 2) % graph.height);
-        if (next.x == -1) break;
-        
-        while (cell(graph, prev)) { //take random steps towards a known empty space until we hit an empty space, this will always terminate
-            set_cell(graph, prev, 2); //each time we take a step, destroy the wall on this tile, creating a pathway towards the next empty tile
-            int step_type = gen_random(rng) % 8; //50% chance of taking a random step, 50% chance of taking a step towards the goal
-            switch (step_type) {
-                case 0: //right
-                    if (prev.x + 1 >= graph.width) continue;
-                    prev.x += 1;
-                    break;
-                case 1: //down
-                    if (prev.y + 1 >= graph.height) continue;
-                    prev.y += 1;
-                    break;
-                case 2: //left
-                    if (prev.x - 1 < 0) continue;
-                    prev.x -= 1;
-                    break;
-                case 3: //up
-                    if (prev.y - 1 < 0) continue;
-                    prev.y -= 1;
-                    break;
-                default: //towards goal
-                    if (step_type % 2) { //towards goal x
-                        if (prev.x == next.x) continue;
-                        if (prev.x < next.x) {
-                            prev.x += 1;
-                        } else {
-                            prev.x -= 1;
-                        }
-                    }
-                    else { //towards goal y
-                        if (prev.y == next.y) continue;
-                        if (prev.y < next.y) {
-                            prev.y += 1;
-                        } else {
-                            prev.y -= 1;
-                        }
-                    }
+    while (stack_size) {
+        p = stack[--stack_size];
+        for (int dir = 0; dir < 4; dir++) {
+            int dx = (dir % 2) ? 0 : (dir - 1);
+            int dy = (dir % 2) ? (dir - 2) : 0;
+            Pos u = (Pos){ p.x + dx, p.y + dy };
+            if (u.x < 0 || u.y < 0 || u.x >= graph.width || u.y >= graph.height) continue;
+            if (!cell(graph, u)) {
+                set_cell(graph, u, 2);
+                stack[stack_size++] = u;
             }
         }
-        next = prev; //set next to whatever empty tile we found first
     }
-    //we're finished, now set all the twos back to zeroes
-    for (int i = 0; i < graph.width * graph.height; i++) {
-        if (graph.cells[i] == 2) {
-            graph.cells[i] = 0;
+}
+
+//finds the nearest zero, returns (0, 0) if it can't find one
+Pos find_empty(Graph graph, Pos* stack, Pos p) {
+    int head = 0;
+    int tail = 0;
+
+    if (cell(graph, p) == 1) set_cell(graph, p, 3);
+
+    stack[head++] = p;
+
+    while(head > tail) {
+        p = stack[tail++];
+        for (int dir = 0; dir < 4; dir++) {
+            int dx = (dir % 2) ? 0 : (dir - 1);
+            int dy = (dir % 2) ? (dir - 2) : 0;
+            Pos u = (Pos){ p.x + dx, p.y + dy };
+            if (u.x < 0 || u.y < 0 || u.x >= graph.width || u.y >= graph.height) continue;
+            switch (cell(graph, u)) {
+                case 0:
+                    for (int i = 0; i < head; i++) { //clean up markings
+                        if (cell(graph, stack[i]) == 3) set_cell(graph, stack[i], 1);
+                        if (cell(graph, stack[i]) == 4) set_cell(graph, stack[i], 2);
+                    }
+                    return u;
+                case 1:
+                    set_cell(graph, u, 3); //mark it as visited so we don't keep flood filling the same cells
+                    stack[head++] = u;
+                    break;
+                case 2:
+                    set_cell(graph, u, 4);
+                    stack[head++] = u;
+            }
         }
     }
+    for (int i = 0; i < head; i++) { //clean up markings
+        if (cell(graph, stack[i]) == 3) set_cell(graph, stack[i], 1);
+        if (cell(graph, stack[i]) == 4) set_cell(graph, stack[i], 2);
+    }
+    return (Pos) { 0, 0 };
+}
+
+//destroys walls until all empty tiles are contiguous
+void connect_graph(Graph graph) {
+    Pos* stack = malloc(graph.width * graph.height * sizeof(Pos));
+
+    Pos p = (Pos){ 0, 0 };
+    Pos next = p;
+
+    do {
+        int dx = (p.x < next.x) ? 1 : -1; //smash walls as we move to the empty spot to ensure it'll be connected to our space
+        while (p.x != next.x && cell(graph, p)) {
+            set_cell(graph, p, 2);
+            p.x += dx;
+        }
+        int dy = (p.y < next.y) ? 1 : -1;
+        while (p.y != next.y && cell(graph, p)) {
+            set_cell(graph, p, 2);
+            p.y += dy;
+        } //now p == next, so we can repeat
+        flood_empty(graph, stack, p); //mark all the empty spots we can reach as reachable
+        next = find_empty(graph, stack, p); //find the closest empty spot
+    } while (next.x != 0 || next.y != 0);
+
+    for (int i = 0; i < graph.width * graph.height; i++) { //unmark all the cells we operated on
+        if (graph.cells[i] > 1) graph.cells[i] -= 2;
+    }
+
+    free(stack);
 }
