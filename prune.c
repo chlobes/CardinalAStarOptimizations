@@ -41,12 +41,12 @@ void prune_cell(Graph graph, Pos* stack, int* stack_size, Pos p, Cell generation
 }
 
 int prune_graph(Graph graph) {
-	//TODO: use a dynamic vector so we don't risk buffer overrun
-	Pos* stack1 = malloc(graph.width * graph.height * sizeof(Pos));
+	//TODO: dynamically allocate instead of fixed size
+	Pos* stack1 = malloc(graph.width * graph.height * sizeof(Pos) * 2); //this shouldn't overrun based on how many each prune call can push
 	Pos* stack2 = malloc(graph.width * graph.height * sizeof(Pos) / 2);
 	int stack_size1 = 0;
 	int stack_size2 = 0;
-	Cell generation = 6;
+	int generation = 6;
 
 	for (int x = 0; x < graph.width; x++) {
 		for (int y = 0; y < graph.height; y++) {
@@ -55,10 +55,10 @@ int prune_graph(Graph graph) {
 	}
 
 	while (stack_size1) {
-		generation = (generation + 1) % 255;
-		while (stack_size1) prune_cell(graph, stack2, &stack_size2, stack1[--stack_size1], generation);
-		generation = (generation + 1) % 255;
-		while (stack_size2) prune_cell(graph, stack1, &stack_size1, stack2[--stack_size2], generation);
+		generation++;
+		while (stack_size1) prune_cell(graph, stack2, &stack_size2, stack1[--stack_size1], min(generation, 254));
+		generation++;
+		while (stack_size2) prune_cell(graph, stack1, &stack_size1, stack2[--stack_size2], min(generation, 254));
 	}
 
 	free(stack1);

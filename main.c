@@ -17,6 +17,29 @@
 #include "prune.h"
 //#include "mincut.h"
 
+typedef struct algoStats {
+    int runs;
+    double runtime;
+    int path_length;
+    #ifdef PATH_INFO
+    int nodes_discovered;
+    int nodes_pushed;
+    int nodes_expanded;
+    int largest_heap;
+    #endif
+} AlgoStats;
+
+void print_stats(AlgoStats stats, FILE* output) {
+    fprintf(output, "time %fs\n", stats.runtime / stats.runs);
+    #ifdef PATH_INFO
+    fprintf(output, "nodes discovered %d\n", stats.nodes_discovered / stats.runs);
+    fprintf(output, "nodes pushed %d\n", stats.nodes_pushed / stats.runs);
+    fprintf(output, "nodes expanded %d\n", stats.nodes_expanded / stats.runs);
+    fprintf(output, "largest heap %d\n", stats.largest_heap / stats.runs);
+    #endif
+    fprintf(output, "path length %d\n", stats.path_length / stats.runs);
+}
+
 typedef Path (*PathfinderFunction)(Graph, Pos, Pos);
 
 //generates a graph of walls and empty nodes, the empty nodes are always connected, and the top left and bottom right right corners are always empty
@@ -38,7 +61,7 @@ Graph generate_graph(int width, int height, u64 seed, float noise_thresh, float 
 }
 
 //profiling function written by chatgpt
-void profile_pathfinder(FILE* output, char* image_output, PathfinderFunction f, Graph graph, Cell prune_generations, Pos start, Pos end) {
+void profile_pathfinder(AlgoStats* output, char* image_output, PathfinderFunction f, Graph graph, Cell prune_generations, Pos start, Pos end) {
     LARGE_INTEGER frequency;
     LARGE_INTEGER start_time;
     LARGE_INTEGER end_time;
@@ -55,13 +78,14 @@ void profile_pathfinder(FILE* output, char* image_output, PathfinderFunction f, 
     QueryPerformanceCounter(&end_time); //stop the timer
     interval = (double)(end_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
 
-    fprintf(output, "time %fs\n", interval);
-    fprintf(output, "path length %d\n", path.num_steps);
+    output->runs += 1;
+    output->runtime += interval;
+    output->path_length += path.num_steps;
     #ifdef PATH_INFO
-    fprintf(output, "nodes discovered %d\n", path.nodes_discovered);
-    fprintf(output, "nodes pushed %d\n", path.nodes_pushed);
-    fprintf(output, "nodes expanded %d\n", path.nodes_expanded);
-    fprintf(output, "largest heap %d\n", path.largest_heap);
+    output->nodes_discovered = path.nodes_discovered;
+    output->nodes_pushed = path.nodes_pushed;
+    output->nodes_expanded = path.nodes_expanded;
+    output->largest_heap = path.largest_heap;
     #endif
 
     for (int i = 0; i < path.num_steps; i++) {
@@ -79,17 +103,15 @@ void profile_pathfinder(FILE* output, char* image_output, PathfinderFunction f, 
     free_path(&path);
 }
 
-void compare_algos(int width, int height, u64 seed, float noise_thresh, float noise_scale, FILE* output) {
+void compare_algos(int width, int height, u64 seed, float noise_thresh, float noise_scale, AlgoStats* output) {
     printf("\ngrid size: (%d %d)\n", width, height);
     printf("params: %d, %f, %f\n", seed, noise_thresh, noise_scale);
     int prune_generations = 0;
 
     Graph graph = generate_graph(width, height, seed, noise_thresh, noise_scale);
 
-    fprintf(output, "astar:\n");
-    profile_pathfinder(output, "astar.bmp", astar, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
-    fprintf(output, "\nlookahead:\n");
-    profile_pathfinder(output, "lookahead.bmp", lookahead, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
+    profile_pathfinder(&output[0], "astar.bmp", astar, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
+    profile_pathfinder(&output[1], "lookahead.bmp", lookahead, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
 
     //TODO: we could clean up this duplicated code with some macros
     LARGE_INTEGER frequency;
@@ -104,18 +126,19 @@ void compare_algos(int width, int height, u64 seed, float noise_thresh, float no
     QueryPerformanceCounter(&start_time); //start the timer
 
     prune_generations = prune_graph(graph);
+    printf("%d\n", prune_generations);
 
     QueryPerformanceCounter(&end_time); //stop the timer
     interval = (double)(end_time.QuadPart - start_time.QuadPart) / frequency.QuadPart;
 
-    fprintf(output, "\npruned %d generations in %fs\n", prune_generations, interval);
+    output[4].runs += 1;
+    output[4].runtime += interval;
+    output[4].nodes_discovered += prune_generations;
 
     if (WRITE_BMP) write_bmp("pruned.bmp", graph, prune_generations);
 
-    fprintf(output, "\npruned astar:\n");
-    profile_pathfinder(output, "pruned_astar.bmp", astar, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
-    fprintf(output, "\npruned lookahead:\n");
-    profile_pathfinder(output, "pruned_lookahead.bmp", lookahead, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
+    profile_pathfinder(&output[2], "pruned_astar.bmp", astar, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
+    profile_pathfinder(&output[3], "pruned_lookahead.bmp", lookahead, graph, prune_generations, (Pos) { 0, 0 }, (Pos) { width - 1, height - 1 });
 
     free_graph(graph);
 }
@@ -125,7 +148,19 @@ int main() {
     u64 seed;
     float noise_thresh, noise_scale;
     int prune_generations = 0;
-    FILE* output = fopen("output.txt", "w");
+    AlgoStats* stats = malloc(5 * sizeof(AlgoStats));
+    if (stats == NULL) exit(1);
+    for (int i = 0; i < 5; i++) {
+        stats[i].runs = 0;
+        stats[i].runtime = 0.0f;
+        stats[i].path_length = 0;
+        #ifdef PATH_INFO
+        stats[i].nodes_discovered = 0;
+        stats[i].nodes_pushed = 0;
+        stats[i].nodes_expanded = 0;
+        stats[i].largest_heap = 0;
+        #endif
+    }
 
     while (1) {
         printf("enter grid width (0 to exit): ");
@@ -142,10 +177,23 @@ int main() {
         width += width % 2; //for some reason, malloc crashes when width/height are odd, don't ask me why
         height += height % 2;
 
-        compare_algos(width, height, seed, noise_thresh, noise_scale, output);
+        compare_algos(width, height, seed, noise_thresh, noise_scale, stats);
     }
 
+    FILE* output = fopen("output.txt", "w");
+
+    fprintf(output, "astar:\n");
+    print_stats(stats[0], output);
+    fprintf(output, "\nlookahead:\n");
+    print_stats(stats[1], output);
+    fprintf(output, "\npruned astar:\n");
+    print_stats(stats[2], output);
+    fprintf(output, "\npruned lookahead:\n");
+    print_stats(stats[3], output);
+    fprintf(output, "\npruning took %fs average generations %f", stats[4].runtime / stats[4].runs, (double)stats[4].nodes_discovered / stats[4].runs);
+
     fclose(output);
+    free(stats);
     
     return 0;
 }
