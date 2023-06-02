@@ -30,7 +30,7 @@ typedef struct algoStats {
 } AlgoStats;
 
 void print_stats(AlgoStats stats, FILE* output) {
-    fprintf(output, "Runtime: %.3fs\n", stats.runtime / stats.runs);
+    fprintf(output, "Runtime: %.6fs\n", stats.runtime / stats.runs);
     #ifdef PATH_INFO
     fprintf(output, "Discovered: %d\n", stats.nodes_discovered / stats.runs);
     fprintf(output, "Pushed: %d\n", stats.nodes_pushed / stats.runs);
