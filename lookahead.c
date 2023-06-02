@@ -77,64 +77,28 @@ Path lookahead(Graph closed_set, Pos start, Pos end) {
         #endif
         switch (parent.from) {
             case RIGHT:
-                if (parent.pos.x + 1 < closed_set.width) {
-                    add_child(RIGHT);
-                }
-                if (parent.pos.y + 1 < closed_set.height) {
-                    if (cell(closed_set, offset(parent.pos, DOWNLEFT))) { //optimization 2: if grandparent could've pathed to this node, skip it
-                        add_child(DOWN);
-                    }
-                }
-                if (parent.pos.y - 1 >= 0) {
-                    if (cell(closed_set, offset(parent.pos, UPLEFT))) { //optimization 2: if grandparent could've pathed to this node, skip it
-                        add_child(UP);
-                    }
-                }
+                if (parent.pos.x + 1 < closed_set.width) add_child(RIGHT);
+                //optimization 2: skip nodes if a parent could path to them equally
+                if (parent.pos.y + 1 < closed_set.height && cell(closed_set, offset(parent.pos, DOWNLEFT))) add_child(DOWN);
+                if (parent.pos.y - 1 >= 0 && cell(closed_set, offset(parent.pos, UPLEFT))) add_child(UP);
                 break;
             case DOWN:
-                if (parent.pos.y + 1 < closed_set.height) {
-                    add_child(DOWN);
-                }
-                if (parent.pos.x + 1 < closed_set.width) {
-                    if (cell(closed_set, offset(parent.pos, UPRIGHT))) { //optimization 2: if grandparent could've pathed to this node, skip it
-                        add_child(RIGHT);
-                    }
-                }
-                if (parent.pos.x - 1 >= 0) {
-                    if (cell(closed_set, offset(parent.pos, UPLEFT))) { //optimization 2: if grandparent could've pathed to this node, skip it
-                        add_child(LEFT);
-                    }
-                }
+                if (parent.pos.y + 1 < closed_set.height) add_child(DOWN);
+                //optimization 2: skip nodes if a parent could path to them equally
+                if (parent.pos.x + 1 < closed_set.width && cell(closed_set, offset(parent.pos, UPRIGHT))) add_child(RIGHT);
+                if (parent.pos.x - 1 >= 0 && cell(closed_set, offset(parent.pos, UPLEFT))) add_child(LEFT);
                 break;
             case LEFT:
-                if (parent.pos.x - 1 >= 0) {
-                    add_child(LEFT);
-                }
-                if (parent.pos.y + 1 < closed_set.height) {
-                    if (cell(closed_set, offset(parent.pos, DOWNRIGHT))) { //optimization 2: if grandparent could've pathed to this node, skip it
-                        add_child(DOWN);
-                    }
-                }
-                if (parent.pos.y - 1 >= 0) {
-                    if (cell(closed_set, offset(parent.pos, UPRIGHT))) { //optimization 2: if grandparent could've pathed to this node, skip it
-                        add_child(UP);
-                    }
-                }
+                if (parent.pos.x - 1 >= 0) add_child(LEFT);
+                //optimization 2: skip nodes if a parent could path to them equally
+                if (parent.pos.y + 1 < closed_set.height && cell(closed_set, offset(parent.pos, DOWNRIGHT))) add_child(DOWN);
+                if (parent.pos.y - 1 >= 0 && cell(closed_set, offset(parent.pos, UPRIGHT))) add_child(UP);
                 break;
             case UP:
-                if (parent.pos.y - 1 >= 0) {
-                    add_child(UP);
-                }
-                if (parent.pos.x - 1 >= 0) {
-                    if (cell(closed_set, offset(parent.pos, DOWNLEFT))) { //optimization 2: if grandparent could've pathed to this node, skip it
-                        add_child(LEFT);
-                    }
-                }
-                if (parent.pos.x + 1 < closed_set.width) {
-                    if (cell(closed_set, offset(parent.pos, DOWNRIGHT))) { //optimization 2: if grandparent could've pathed to this node, skip it
-                        add_child(RIGHT);
-                    }
-                }
+                if (parent.pos.y - 1 >= 0) add_child(UP);
+                //optimization 2: skip nodes if a parent could path to them equally
+                if (parent.pos.x - 1 >= 0 && cell(closed_set, offset(parent.pos, DOWNLEFT))) add_child(LEFT);
+                if (parent.pos.x + 1 < closed_set.width && cell(closed_set, offset(parent.pos, DOWNRIGHT))) add_child(RIGHT);
                 break;
         }
         #ifdef PATH_INFO
